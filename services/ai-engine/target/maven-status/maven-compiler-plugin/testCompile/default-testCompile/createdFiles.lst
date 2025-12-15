@@ -1,0 +1,3 @@
+com\spaceflow\aiengine\api\ExplanationsControllerTest.class
+com\spaceflow\aiengine\api\RecommendationsControllerTest.class
+com\spaceflow\aiengine\health\HealthControllerTest.class
