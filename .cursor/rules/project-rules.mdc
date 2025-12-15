@@ -1,0 +1,25 @@
+---
+alwaysApply: true
+---
+You are assisting in building an enterprise-style smart workplace platform called SpaceFlow.
+
+This repository is a monorepo containing multiple independent services under /services.
+Each service:
+- Is independently deployable
+- Owns its own data
+- Must not share code or databases with other services
+
+Architecture principles:
+- API-first design
+- Clear service boundaries
+- Simplicity over overengineering
+- No Kubernetes
+- Docker Compose is the orchestration layer
+- No hidden magic or unnecessary abstractions
+
+Expectations:
+- Generate clear, readable, boring code
+- Prefer explicit configuration over conventions
+- Do not introduce new tools, frameworks, or patterns unless explicitly asked
+- If something is ambiguous, ask for clarification instead of guessing
+
