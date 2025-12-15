@@ -13,6 +13,7 @@ import {
   YAxis
 } from "recharts";
 import { analyticsApi } from "../api/analyticsApi";
+import { AiRecommendationsPanel } from "../components/AiRecommendationsPanel";
 
 interface UtilizationPoint {
   timestamp: string;
@@ -137,155 +138,183 @@ export const Dashboard = () => {
       <Typography variant="h4" gutterBottom>
         Dashboard
       </Typography>
-      <Paper
+      <Box
         sx={{
-          p: 3,
-          minHeight: 240,
           display: "flex",
-          flexDirection: "column",
-          gap: 1
-        }}
-      >
-        <Typography variant="h6">Space Utilization</Typography>
-        <Typography variant="caption" color="text.secondary">
-          Derived, non-real-time data
-        </Typography>
-        <Box sx={{ flex: 1, mt: 2 }}>
-          {loading ? (
-            <Skeleton variant="rounded" height={240} />
-          ) : data.length === 0 ? (
-            <Box
-              sx={{
-                height: 240,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center"
-              }}
-            >
-              <Typography color="text.secondary">
-                No utilization data available.
-              </Typography>
-            </Box>
-          ) : (
-            <ResponsiveContainer width="100%" height={240}>
-              <LineChart data={data}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="timestamp" />
-                <YAxis />
-                <Tooltip />
-                <Line
-                  type="monotone"
-                  dataKey="utilization"
-                  stroke="#1976d2"
-                  dot={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          )}
-        </Box>
-      </Paper>
-      {/* TODO: Wire this card to real booking vs usage analytics once the backend pipeline is implemented. */}
-      <Paper
-        sx={{
-          p: 3,
-          minHeight: 240,
-          display: "flex",
-          flexDirection: "column",
-          gap: 1,
-          position: "relative"
+          flexDirection: { xs: "column", lg: "row" },
+          alignItems: "flex-start",
+          gap: 2
         }}
       >
         <Box
           sx={{
-            position: "absolute",
-            top: 8,
-            right: 12,
-            px: 1,
-            py: 0.25,
-            borderRadius: 1,
-            bgcolor: "warning.light",
-            border: (theme) => `1px solid ${theme.palette.warning.main}`
+            flex: { xs: "1 1 auto", lg: "2 1 0" },
+            display: "flex",
+            flexDirection: "column",
+            gap: 2
           }}
         >
-          <Typography
-            variant="caption"
-            sx={{ fontWeight: 600, color: "warning.dark" }}
+          <Paper
+            sx={{
+              p: 3,
+              minHeight: 240,
+              display: "flex",
+              flexDirection: "column",
+              gap: 1
+            }}
           >
-            DEV DATA
-          </Typography>
-        </Box>
-        <Typography variant="h6">Booking vs Actual Usage</Typography>
-        <Typography variant="caption" color="text.secondary">
-          Derived comparison of bookings vs realized usage (development stub).
-        </Typography>
-        <Box sx={{ flex: 1, mt: 2 }}>
-          {bookingLoading ? (
-            <Skeleton variant="rounded" height={240} />
-          ) : bookingError ? (
+            <Typography variant="h6">Space Utilization</Typography>
+            <Typography variant="caption" color="text.secondary">
+              Derived, non-real-time data
+            </Typography>
+            <Box sx={{ flex: 1, mt: 2 }}>
+              {loading ? (
+                <Skeleton variant="rounded" height={240} />
+              ) : data.length === 0 ? (
+                <Box
+                  sx={{
+                    height: 240,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center"
+                  }}
+                >
+                  <Typography color="text.secondary">
+                    No utilization data available.
+                  </Typography>
+                </Box>
+              ) : (
+                <ResponsiveContainer width="100%" height={240}>
+                  <LineChart data={data}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="timestamp" />
+                    <YAxis />
+                    <Tooltip />
+                    <Line
+                      type="monotone"
+                      dataKey="utilization"
+                      stroke="#1976d2"
+                      dot={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+            </Box>
+          </Paper>
+          {/* TODO: Wire this card to real booking vs usage analytics once the backend pipeline is implemented. */}
+          <Paper
+            sx={{
+              p: 3,
+              minHeight: 240,
+              display: "flex",
+              flexDirection: "column",
+              gap: 1,
+              position: "relative"
+            }}
+          >
             <Box
               sx={{
-                height: 240,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                textAlign: "center"
+                position: "absolute",
+                top: 8,
+                right: 12,
+                px: 1,
+                py: 0.25,
+                borderRadius: 1,
+                bgcolor: "warning.light",
+                border: (theme) => `1px solid ${theme.palette.warning.main}`
               }}
             >
-              <Typography color="error">
-                {bookingError}
-              </Typography>
-            </Box>
-          ) : bookingBuckets.length === 0 ? (
-            <Box
-              sx={{
-                height: 240,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                textAlign: "center"
-              }}
-            >
-              <Typography color="text.secondary">
-                No booking vs usage data available.
-              </Typography>
-            </Box>
-          ) : (
-            <ResponsiveContainer width="100%" height={240}>
-              <BarChart
-                data={bookingBuckets}
-                margin={{ top: 8, right: 16, left: 0, bottom: 0 }}
+              <Typography
+                variant="caption"
+                sx={{ fontWeight: 600, color: "warning.dark" }}
               >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="periodStart" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar
-                  dataKey="bookedCount"
-                  name="Booked"
-                  stackId="a"
-                  fill="#1976d2"
-                  isAnimationActive
-                />
-                <Bar
-                  dataKey="usedCount"
-                  name="Used"
-                  stackId="a"
-                  fill="#2e7d32"
-                  isAnimationActive
-                />
-                <Bar
-                  dataKey="noShowCount"
-                  name="No-shows"
-                  stackId="a"
-                  fill="#ef6c00"
-                  isAnimationActive
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
+                DEV DATA
+              </Typography>
+            </Box>
+            <Typography variant="h6">Booking vs Actual Usage</Typography>
+            <Typography variant="caption" color="text.secondary">
+              Derived comparison of bookings vs realized usage (development
+              stub).
+            </Typography>
+            <Box sx={{ flex: 1, mt: 2 }}>
+              {bookingLoading ? (
+                <Skeleton variant="rounded" height={240} />
+              ) : bookingError ? (
+                <Box
+                  sx={{
+                    height: 240,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    textAlign: "center"
+                  }}
+                >
+                  <Typography color="error">
+                    {bookingError}
+                  </Typography>
+                </Box>
+              ) : bookingBuckets.length === 0 ? (
+                <Box
+                  sx={{
+                    height: 240,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    textAlign: "center"
+                  }}
+                >
+                  <Typography color="text.secondary">
+                    No booking vs usage data available.
+                  </Typography>
+                </Box>
+              ) : (
+                <ResponsiveContainer width="100%" height={240}>
+                  <BarChart
+                    data={bookingBuckets}
+                    margin={{ top: 8, right: 16, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="periodStart" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar
+                      dataKey="bookedCount"
+                      name="Booked"
+                      stackId="a"
+                      fill="#1976d2"
+                      isAnimationActive
+                    />
+                    <Bar
+                      dataKey="usedCount"
+                      name="Used"
+                      stackId="a"
+                      fill="#2e7d32"
+                      isAnimationActive
+                    />
+                    <Bar
+                      dataKey="noShowCount"
+                      name="No-shows"
+                      stackId="a"
+                      fill="#ef6c00"
+                      isAnimationActive
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </Box>
+          </Paper>
         </Box>
-      </Paper>
+        <Box
+          sx={{
+            flex: { xs: "1 1 auto", lg: "1 1 0" },
+            minWidth: { lg: 320 },
+            maxWidth: { lg: 420 }
+          }}
+        >
+          <AiRecommendationsPanel />
+        </Box>
+      </Box>
     </Box>
   );
 };
