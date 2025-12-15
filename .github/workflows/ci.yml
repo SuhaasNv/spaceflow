@@ -83,7 +83,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
-          file: Dockerfile
+          file: ./frontend/Dockerfile
           push: false
           tags: spaceflow-frontend:ci
           cache-from: type=gha
@@ -93,7 +93,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./services/auth-service
-          file: Dockerfile
+          file: ./services/auth-service/Dockerfile
           push: false
           tags: spaceflow-auth-service:ci
           cache-from: type=gha
@@ -103,7 +103,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./services/booking-service
-          file: Dockerfile
+          file: ./services/booking-service/Dockerfile
           push: false
           tags: spaceflow-booking-service:ci
           cache-from: type=gha
@@ -113,7 +113,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./services/occupancy-service
-          file: Dockerfile
+          file: ./services/occupancy-service/Dockerfile
           push: false
           tags: spaceflow-occupancy-service:ci
           cache-from: type=gha
@@ -123,7 +123,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./services/analytics-service
-          file: Dockerfile
+          file: ./services/analytics-service/Dockerfile
           push: false
           tags: spaceflow-analytics-service:ci
           cache-from: type=gha
@@ -133,7 +133,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./services/ai-engine
-          file: Dockerfile
+          file: ./services/ai-engine/Dockerfile
           push: false
           tags: spaceflow-ai-engine:ci
           cache-from: type=gha
