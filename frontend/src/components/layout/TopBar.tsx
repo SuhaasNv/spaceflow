@@ -1,13 +1,20 @@
+import { useState } from "react";
 import {
   AppBar,
   Avatar,
   Box,
   IconButton,
   Toolbar,
-  Typography
+  Typography,
+  Menu,
+  MenuItem,
+  Divider
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
+import LogoutIcon from "@mui/icons-material/Logout";
+import { useAuth } from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 type TopBarProps = {
   onMenuClick: () => void;
@@ -15,6 +22,39 @@ type TopBarProps = {
 };
 
 export const TopBar = ({ onMenuClick, isSidebarOpen }: TopBarProps) => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
+
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login", { replace: true });
+    handleClose();
+  };
+
+  // Get user initials for avatar
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  if (!user) {
+    return null;
+  }
+
   return (
     <AppBar
       position="fixed"
@@ -148,12 +188,13 @@ export const TopBar = ({ onMenuClick, isSidebarOpen }: TopBarProps) => {
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
           <Box
+            onClick={handleClick}
             sx={(theme) => ({
               display: "flex",
               alignItems: "center",
-              gap: 1,
-              px: 0.75,
-              py: 0.25,
+              gap: 1.25,
+              px: 1,
+              py: 0.5,
               borderRadius: 999,
               bgcolor: "transparent",
               cursor: "pointer",
@@ -174,21 +215,98 @@ export const TopBar = ({ onMenuClick, isSidebarOpen }: TopBarProps) => {
           >
             <Avatar
               sx={{
-                width: 32,
-                height: 32,
-                fontSize: 14
+                width: 36,
+                height: 36,
+                fontSize: 14,
+                bgcolor: "primary.main",
+                color: "primary.contrastText",
+                flexShrink: 0
               }}
             >
-              SF
+              {getInitials(user.name)}
             </Avatar>
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ display: { xs: "none", sm: "inline-flex" } }}
+            <Box
+              sx={{
+                display: { xs: "none", sm: "flex" },
+                flexDirection: "column",
+                alignItems: "flex-start",
+                justifyContent: "center",
+                minWidth: 0,
+                gap: 0.25
+              }}
             >
-              Workspace Admin
-            </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 500,
+                  lineHeight: 1.2,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  maxWidth: "200px"
+                }}
+              >
+                {user.name}
+              </Typography>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{
+                  fontSize: "0.75rem",
+                  lineHeight: 1.2,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  maxWidth: "200px"
+                }}
+              >
+                {user.role}
+              </Typography>
+            </Box>
           </Box>
+          <Menu
+            anchorEl={anchorEl}
+            open={open}
+            onClose={handleClose}
+            anchorOrigin={{
+              vertical: "bottom",
+              horizontal: "right"
+            }}
+            transformOrigin={{
+              vertical: "top",
+              horizontal: "right"
+            }}
+            PaperProps={{
+              sx: {
+                mt: 1,
+                minWidth: 200,
+                borderRadius: 2,
+                border: "1px solid",
+                borderColor: "divider",
+                bgcolor: "background.paper",
+                boxShadow: (theme) => (theme as any).customShadows?.subtleGlow || "0 18px 45px rgba(15, 23, 42, 0.7)"
+              }
+            }}
+          >
+            <MenuItem disabled>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  {user.name}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {user.email}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {user.workspace}
+                </Typography>
+              </Box>
+            </MenuItem>
+            <Divider />
+            <MenuItem onClick={handleLogout}>
+              <LogoutIcon sx={{ mr: 1.5, fontSize: 20 }} />
+              <Typography variant="body2">Logout</Typography>
+            </MenuItem>
+          </Menu>
         </Box>
       </Toolbar>
     </AppBar>
