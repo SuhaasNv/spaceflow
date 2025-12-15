@@ -1,5 +1,6 @@
 package com.spaceflow.analytics.api;
 
+import com.spaceflow.analytics.dto.BookingUsageBucket;
 import com.spaceflow.analytics.dto.BookingUsageResponse;
 import com.spaceflow.analytics.dto.PatternInsightsResponse;
 import com.spaceflow.analytics.dto.Scope;
@@ -101,8 +102,34 @@ public class AnalyticsController {
         timeRange.setTo(to);
         response.setTimeRange(timeRange);
         response.setGranularity(granularity != null ? granularity : "daily");
-        response.setNotes("Stub response");
-        response.setBuckets(Collections.emptyList());
+
+        // DEV SEED DATA – stubbed booking vs usage metrics for development only; not real analytics.
+        BookingUsageBucket b1 = new BookingUsageBucket();
+        b1.setPeriodStart("2025-01-13T09:00:00Z");
+        b1.setPeriodEnd("2025-01-13T10:00:00Z");
+        b1.setBookedCount(40L);
+        b1.setUsedCount(32L);
+        b1.setNoShowCount(4L);
+        b1.setCancelledCount(4L);
+
+        BookingUsageBucket b2 = new BookingUsageBucket();
+        b2.setPeriodStart("2025-01-13T13:00:00Z");
+        b2.setPeriodEnd("2025-01-13T14:00:00Z");
+        b2.setBookedCount(55L);
+        b2.setUsedCount(48L);
+        b2.setNoShowCount(5L);
+        b2.setCancelledCount(2L);
+
+        BookingUsageBucket b3 = new BookingUsageBucket();
+        b3.setPeriodStart("2025-01-13T17:00:00Z");
+        b3.setPeriodEnd("2025-01-13T18:00:00Z");
+        b3.setBookedCount(30L);
+        b3.setUsedCount(20L);
+        b3.setNoShowCount(6L);
+        b3.setCancelledCount(4L);
+
+        response.setNotes("DEV SEED DATA – stubbed booking vs usage metrics for development only; not real analytics.");
+        response.setBuckets(Arrays.asList(b1, b2, b3));
 
         return ResponseEntity.ok(response);
     }
