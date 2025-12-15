@@ -4,7 +4,12 @@ export interface UtilizationQueryParams {
   [key: string]: string | number | boolean | undefined;
 }
 
+export interface BookingUsageQueryParams {
+  [key: string]: string | number | boolean | undefined;
+}
+
 export type UtilizationResponse = Record<string, unknown>;
+export type BookingUsageResponse = Record<string, unknown>;
 
 export const analyticsApi = {
   async getUtilization(
@@ -12,6 +17,17 @@ export const analyticsApi = {
   ): Promise<UtilizationResponse> {
     const response = await httpClient.get<UtilizationResponse>(
       "/api/v1/utilization",
+      { params }
+    );
+
+    return response.data;
+  },
+
+  async getBookingUsage(
+    params?: BookingUsageQueryParams
+  ): Promise<BookingUsageResponse> {
+    const response = await httpClient.get<BookingUsageResponse>(
+      "/api/v1/booking-usage",
       { params }
     );
 
