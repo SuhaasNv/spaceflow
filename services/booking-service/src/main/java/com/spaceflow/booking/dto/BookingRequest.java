@@ -1,18 +1,20 @@
 package com.spaceflow.booking.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.OffsetDateTime;
 
 public class BookingRequest {
-    @NotNull
+
+    @NotBlank
     private String spaceId;
-    
+
     @NotNull
     private OffsetDateTime startTime;
-    
+
     @NotNull
     private OffsetDateTime endTime;
-    
+
     private String purpose;
     private Integer attendeeCount;
 

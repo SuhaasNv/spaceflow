@@ -2,14 +2,19 @@ package com.spaceflow.analytics.api;
 
 import com.spaceflow.analytics.dto.BookingUsageResponse;
 import com.spaceflow.analytics.dto.PatternInsightsResponse;
+import com.spaceflow.analytics.dto.Scope;
 import com.spaceflow.analytics.dto.SegmentComparisonResponse;
 import com.spaceflow.analytics.dto.SnapshotResponse;
+import com.spaceflow.analytics.dto.SnapshotSummary;
+import com.spaceflow.analytics.dto.TimeRange;
 import com.spaceflow.analytics.dto.UtilizationResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Collections;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -26,7 +31,17 @@ public class AnalyticsController {
     ) {
         // TODO: Implement retrieval of aggregated utilization metrics
         // This is a read-only, derived view over booking and occupancy data.
+
         UtilizationResponse response = new UtilizationResponse();
+        response.setScope(new Scope());
+        TimeRange timeRange = new TimeRange();
+        timeRange.setFrom(from);
+        timeRange.setTo(to);
+        response.setTimeRange(timeRange);
+        response.setGranularity(granularity != null ? granularity : "daily");
+        response.setNotes("Stub response");
+        response.setPoints(Collections.emptyList());
+
         return ResponseEntity.ok(response);
     }
 
@@ -40,7 +55,17 @@ public class AnalyticsController {
     ) {
         // TODO: Implement retrieval of aggregated booking vs usage summaries
         // This endpoint must not perform any mutations in upstream services.
+
         BookingUsageResponse response = new BookingUsageResponse();
+        response.setScope(new Scope());
+        TimeRange timeRange = new TimeRange();
+        timeRange.setFrom(from);
+        timeRange.setTo(to);
+        response.setTimeRange(timeRange);
+        response.setGranularity(granularity != null ? granularity : "daily");
+        response.setNotes("Stub response");
+        response.setBuckets(Collections.emptyList());
+
         return ResponseEntity.ok(response);
     }
 
@@ -54,7 +79,16 @@ public class AnalyticsController {
     ) {
         // TODO: Implement retrieval of derived temporal and behavioral pattern insights
         // Insights are heuristic, approximate, and non-authoritative.
+
         PatternInsightsResponse response = new PatternInsightsResponse();
+        response.setScope(new Scope());
+        TimeRange timeRange = new TimeRange();
+        timeRange.setFrom(from);
+        timeRange.setTo(to);
+        response.setTimeRange(timeRange);
+        response.setNotes("Stub response");
+        response.setInsights(Collections.emptyList());
+
         return ResponseEntity.ok(response);
     }
 
@@ -69,7 +103,17 @@ public class AnalyticsController {
     ) {
         // TODO: Implement retrieval of segmented or comparative analytics
         // Results should be aggregated and non-authoritative.
+
         SegmentComparisonResponse response = new SegmentComparisonResponse();
+        response.setScope(new Scope());
+        TimeRange timeRange = new TimeRange();
+        timeRange.setFrom(from);
+        timeRange.setTo(to);
+        response.setTimeRange(timeRange);
+        response.setSegmentBy(segmentBy);
+        response.setNotes("Stub response");
+        response.setSegments(Collections.emptyList());
+
         return ResponseEntity.ok(response);
     }
 
@@ -82,7 +126,18 @@ public class AnalyticsController {
     ) {
         // TODO: Implement retrieval of snapshot or baseline summaries
         // Snapshots must be treated as approximate and possibly delayed.
+
         SnapshotResponse response = new SnapshotResponse();
+        response.setScope(new Scope());
+
+        SnapshotSummary summary = new SnapshotSummary();
+        summary.setAsOf(asOf);
+        summary.setBaselineWindow(baselineWindow);
+        summary.setNotes("Stub response");
+        summary.setMetrics(Collections.emptyList());
+
+        response.setSummary(summary);
+
         return ResponseEntity.ok(response);
     }
 }

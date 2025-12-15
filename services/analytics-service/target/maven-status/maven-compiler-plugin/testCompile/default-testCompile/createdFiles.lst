@@ -1,0 +1,7 @@
+com\spaceflow\analytics\api\AnalyticsControllerTest$UtilizationEndpoint.class
+com\spaceflow\analytics\api\AnalyticsControllerTest.class
+com\spaceflow\analytics\health\HealthControllerTest.class
+com\spaceflow\analytics\api\AnalyticsControllerTest$SnapshotEndpoint.class
+com\spaceflow\analytics\api\AnalyticsControllerTest$PatternInsightsEndpoint.class
+com\spaceflow\analytics\api\AnalyticsControllerTest$SegmentComparisonEndpoint.class
+com\spaceflow\analytics\api\AnalyticsControllerTest$BookingUsageEndpoint.class
