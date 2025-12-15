@@ -34,7 +34,7 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  { label: "Dashboard", path: "/", icon: <DashboardIcon /> },
+  { label: "Dashboard", path: "/dashboard", icon: <DashboardIcon /> },
   { label: "Utilization", path: "/utilization", icon: <InsightsIcon /> },
   { label: "Booking Usage", path: "/booking-usage", icon: <TimelineIcon /> },
   { label: "Recommendations", path: "/recommendations", icon: <ViewQuiltIcon /> },
@@ -103,6 +103,7 @@ export const Sidebar = ({
                 key={item.path}
                 component={NavLink}
                 to={item.path}
+                end
                 onClick={variant === "temporary" ? onClose : undefined}
                 aria-label={item.label}
                 sx={(theme) => ({

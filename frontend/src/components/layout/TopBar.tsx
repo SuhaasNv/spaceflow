@@ -23,6 +23,7 @@ export const TopBar = ({ onMenuClick, isSidebarOpen }: TopBarProps) => {
         borderBottom: 1,
         borderColor: "divider",
         bgcolor: "background.paper",
+        borderRadius: 0, // Sharp rectangular edges
         // Subtle gradient + shadow to separate header from dark canvas
         backgroundImage:
           "linear-gradient(to bottom, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.96))",
@@ -40,7 +41,7 @@ export const TopBar = ({ onMenuClick, isSidebarOpen }: TopBarProps) => {
         }
       })}
     >
-      <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
+      <Toolbar sx={{ display: "flex", justifyContent: "space-between", borderRadius: 0 }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
           <IconButton
             color="inherit"

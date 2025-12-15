@@ -288,6 +288,17 @@ const spaceFlowDarkOptions: ThemeOptions = {
           "--sf-chart-axis-label": "rgba(255, 255, 255, 0.55)",
           "--sf-chart-tooltip-bg": "rgba(15, 23, 42, 0.98)",
           "--sf-chart-tooltip-border": "rgba(148, 163, 184, 0.7)"
+        },
+        body: {
+          backgroundColor: "#020617",
+          color: "#F9FAFB"
+        },
+        html: {
+          backgroundColor: "#020617"
+        },
+        "#root": {
+          backgroundColor: "#020617",
+          minHeight: "100vh"
         }
       }
     }
