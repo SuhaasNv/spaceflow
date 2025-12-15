@@ -7,4 +7,9 @@ services:
     ports:
       - "8080:8080"
 
+  booking-service:
+    build:
+      context: ./services/booking-service
+    ports:
+      - "8081:8080"
 
