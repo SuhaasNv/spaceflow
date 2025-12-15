@@ -1,16 +1,32 @@
 package com.spaceflow.occupancy.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
 import java.time.OffsetDateTime;
 
 public class Observation {
 
+    @NotBlank
     private String observationId;
+
+    @NotBlank
     private String spaceId;
+
+    @NotNull
     private OffsetDateTime observedStartTime;
+
+    @NotNull
     private OffsetDateTime observedEndTime;
+
+    @NotBlank
     private String occupancyStatus;
+
     private String notes;
+
+    @NotNull
     private OffsetDateTime recordedAt;
+
     private OffsetDateTime updatedAt;
 
     public String getObservationId() {

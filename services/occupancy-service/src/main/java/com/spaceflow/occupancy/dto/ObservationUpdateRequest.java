@@ -5,8 +5,11 @@ import java.time.OffsetDateTime;
 public class ObservationUpdateRequest {
 
     private OffsetDateTime observedStartTime;
+
     private OffsetDateTime observedEndTime;
+
     private String occupancyStatus;
+
     private String notes;
 
     public OffsetDateTime getObservedStartTime() {

@@ -1,0 +1,9 @@
+com\spaceflow\occupancy\dto\Observation.class
+com\spaceflow\occupancy\controller\HealthController.class
+com\spaceflow\occupancy\dto\ObservationCreateRequest.class
+com\spaceflow\occupancy\dto\ObservationsResponse.class
+com\spaceflow\occupancy\dto\ErrorResponse.class
+com\spaceflow\occupancy\OccupancyServiceApplication.class
+com\spaceflow\occupancy\dto\ObservationUpdateRequest.class
+com\spaceflow\occupancy\controller\OccupancyObservationController.class
+com\spaceflow\occupancy\error\GlobalExceptionHandler.class

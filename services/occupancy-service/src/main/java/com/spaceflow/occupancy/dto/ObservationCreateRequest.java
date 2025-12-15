@@ -1,12 +1,13 @@
 package com.spaceflow.occupancy.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.OffsetDateTime;
 
 public class ObservationCreateRequest {
 
-    @NotNull
+    @NotBlank
     private String spaceId;
 
     @NotNull
@@ -15,7 +16,7 @@ public class ObservationCreateRequest {
     @NotNull
     private OffsetDateTime observedEndTime;
 
-    @NotNull
+    @NotBlank
     private String occupancyStatus;
 
     private String notes;

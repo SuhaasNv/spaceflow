@@ -1,8 +1,13 @@
 package com.spaceflow.occupancy.dto;
 
+import jakarta.validation.constraints.NotBlank;
+
 public class ErrorResponse {
 
+    @NotBlank
     private String error;
+
+    @NotBlank
     private String message;
 
     public ErrorResponse() {
