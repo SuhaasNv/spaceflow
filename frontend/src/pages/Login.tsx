@@ -53,7 +53,7 @@ export const Login = () => {
     }
 
     login(email);
-    navigate("/dashboard", { replace: true });
+    navigate("/app/dashboard", { replace: true });
   };
 
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);

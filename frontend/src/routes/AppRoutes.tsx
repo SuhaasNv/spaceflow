@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import { HomePage } from "../pages/HomePage";
 import { Dashboard } from "../pages/Dashboard";
 import { Utilization } from "../pages/Utilization";
 import { BookingUsage } from "../pages/BookingUsage";
@@ -19,7 +20,7 @@ const LoginRoute = () => {
   }
 
   if (user) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/app/dashboard" replace />;
   }
 
   return <Login />;
@@ -28,17 +29,10 @@ const LoginRoute = () => {
 export const AppRoutes = () => {
   return (
     <Routes>
+      <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<LoginRoute />} />
       <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <Navigate to="/dashboard" replace />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard"
+        path="/app/dashboard"
         element={
           <ProtectedRoute>
             <Dashboard />
@@ -46,7 +40,7 @@ export const AppRoutes = () => {
         }
       />
       <Route
-        path="/utilization"
+        path="/app/utilization"
         element={
           <ProtectedRoute>
             <Utilization />
@@ -54,7 +48,7 @@ export const AppRoutes = () => {
         }
       />
       <Route
-        path="/booking-usage"
+        path="/app/booking-usage"
         element={
           <ProtectedRoute>
             <BookingUsage />
@@ -62,7 +56,7 @@ export const AppRoutes = () => {
         }
       />
       <Route
-        path="/recommendations"
+        path="/app/recommendations"
         element={
           <ProtectedRoute>
             <Recommendations />
@@ -70,7 +64,7 @@ export const AppRoutes = () => {
         }
       />
       <Route
-        path="/patterns"
+        path="/app/patterns"
         element={
           <ProtectedRoute>
             <Patterns />
@@ -78,7 +72,7 @@ export const AppRoutes = () => {
         }
       />
       <Route
-        path="/segments"
+        path="/app/segments"
         element={
           <ProtectedRoute>
             <Segments />
@@ -86,13 +80,21 @@ export const AppRoutes = () => {
         }
       />
       <Route
-        path="/snapshots"
+        path="/app/snapshots"
         element={
           <ProtectedRoute>
             <Snapshots />
           </ProtectedRoute>
         }
       />
+      {/* Redirect old routes to new /app/* structure */}
+      <Route path="/dashboard" element={<Navigate to="/app/dashboard" replace />} />
+      <Route path="/utilization" element={<Navigate to="/app/utilization" replace />} />
+      <Route path="/booking-usage" element={<Navigate to="/app/booking-usage" replace />} />
+      <Route path="/recommendations" element={<Navigate to="/app/recommendations" replace />} />
+      <Route path="/patterns" element={<Navigate to="/app/patterns" replace />} />
+      <Route path="/segments" element={<Navigate to="/app/segments" replace />} />
+      <Route path="/snapshots" element={<Navigate to="/app/snapshots" replace />} />
     </Routes>
   );
 };

@@ -34,13 +34,13 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  { label: "Dashboard", path: "/dashboard", icon: <DashboardIcon /> },
-  { label: "Utilization", path: "/utilization", icon: <InsightsIcon /> },
-  { label: "Booking Usage", path: "/booking-usage", icon: <TimelineIcon /> },
-  { label: "Recommendations", path: "/recommendations", icon: <ViewQuiltIcon /> },
-  { label: "Patterns", path: "/patterns", icon: <ViewQuiltIcon /> },
-  { label: "Segments", path: "/segments", icon: <GroupsIcon /> },
-  { label: "Snapshots", path: "/snapshots", icon: <CameraAltIcon /> }
+  { label: "Dashboard", path: "/app/dashboard", icon: <DashboardIcon /> },
+  { label: "Utilization", path: "/app/utilization", icon: <InsightsIcon /> },
+  { label: "Booking Usage", path: "/app/booking-usage", icon: <TimelineIcon /> },
+  { label: "Recommendations", path: "/app/recommendations", icon: <ViewQuiltIcon /> },
+  { label: "Patterns", path: "/app/patterns", icon: <ViewQuiltIcon /> },
+  { label: "Segments", path: "/app/segments", icon: <GroupsIcon /> },
+  { label: "Snapshots", path: "/app/snapshots", icon: <CameraAltIcon /> }
 ];
 
 export const Sidebar = ({
