@@ -1,0 +1,338 @@
+openapi: 3.0.3
+info:
+  title: SpaceFlow AI Engine API
+  version: 1.0.0
+  description: |
+    Read-only advisory API for SpaceFlow's AI Engine.
+
+    The AI Engine provides **non-authoritative** recommendations, suggestions, and insights
+    based on derived analytics context from other SpaceFlow services. All outputs are:
+
+    - Advisory only (never authoritative)
+    - Based on aggregated and derived context, not raw booking or occupancy events
+    - Designed to be explainable, with rationales and contributing factors
+
+servers:
+  - url: /api/v1
+    description: AI Engine API base path (routed via gateway)
+
+tags:
+  - name: Recommendations
+    description: Advisory recommendations and insights
+  - name: Explanations
+    description: Explanations and rationales for recommendations
+
+paths:
+  /recommendations:
+    get:
+      tags:
+        - Recommendations
+      summary: Retrieve advisory recommendations
+      description: |
+        Returns a list of advisory recommendations and insights for a given context.
+
+        The results are non-authoritative and should be treated as suggestions
+        to assist human decision makers.
+      parameters:
+        - name: scope
+          in: query
+          required: true
+          description: >
+            Context scope for the recommendations, such as a building, floor,
+            team, or other logical segment.
+          schema:
+            type: string
+            example: building:HQ
+        - name: timeRangeStart
+          in: query
+          required: false
+          description: Inclusive start of the time range the recommendations should consider.
+          schema:
+            type: string
+            format: date-time
+            example: 2025-12-15T00:00:00Z
+        - name: timeRangeEnd
+          in: query
+          required: false
+          description: Inclusive end of the time range the recommendations should consider.
+          schema:
+            type: string
+            format: date-time
+            example: 2025-12-22T00:00:00Z
+        - name: focus
+          in: query
+          required: false
+          description: >
+            Optional focus area for the recommendations, such as utilization,
+            comfort, collaboration, or cost.
+          schema:
+            type: string
+            example: utilization
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of recommendations to return.
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+            description: List of advisory recommendations for the requested context.
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    scope:
+                      $ref: '#/components/schemas/ContextScope'
+                    timeRange:
+                      $ref: '#/components/schemas/TimeRange'
+                    focus:
+                      type: string
+                      nullable: true
+                      description: Optional focus area that shaped the recommendations.
+                    recommendations:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/Recommendation'
+                  required:
+                    - scope
+                    - recommendations
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /recommendations/{recommendationId}/explanation:
+    get:
+      tags:
+        - Explanations
+      summary: Retrieve explanation for a recommendation
+      description: |
+        Returns a human-readable explanation and rationale for a single
+        advisory recommendation, including contributing factors and
+        confidence details.
+      parameters:
+        - name: recommendationId
+          in: path
+          required: true
+          description: Identifier of the recommendation to explain.
+          schema:
+            type: string
+            example: rec_12345
+        - name: scope
+          in: query
+          required: false
+          description: Optional context scope to validate or refine the explanation.
+          schema:
+            type: string
+            example: building:HQ
+      responses:
+        '200':
+          description: Explanation and rationale for the specified recommendation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecommendationExplanation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  schemas:
+    ContextScope:
+      type: object
+      description: Logical scope for advisory outputs (e.g., building, floor, team).
+      properties:
+        type:
+          type: string
+          description: Type of scope.
+          example: building
+        id:
+          type: string
+          description: Identifier of the scope within SpaceFlow.
+          example: HQ
+      required:
+        - type
+        - id
+
+    TimeRange:
+      type: object
+      description: Time window used when deriving insights and recommendations.
+      properties:
+        start:
+          type: string
+          format: date-time
+          nullable: true
+        end:
+          type: string
+          format: date-time
+          nullable: true
+
+    Recommendation:
+      type: object
+      description: >
+        Advisory recommendation or insight produced by the AI Engine.
+        This is non-authoritative and should be interpreted as guidance only.
+      properties:
+        id:
+          type: string
+          description: Unique identifier of the recommendation.
+          example: rec_12345
+        category:
+          type: string
+          description: High-level category of the recommendation.
+          example: space-utilization
+        title:
+          type: string
+          description: Short, human-readable summary of the recommendation.
+          example: Consider consolidating underutilized desks on Floor 4.
+        description:
+          type: string
+          description: Detailed description of the suggestion or insight.
+        confidence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Relative confidence level for this recommendation (0–1).
+          example: 0.82
+        impactLevel:
+          type: string
+          description: Qualitative indication of potential impact.
+          example: medium
+        primaryReasons:
+          type: array
+          description: Key high-level reasons or drivers behind this recommendation.
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+          description: Time when this recommendation instance was generated.
+      required:
+        - id
+        - category
+        - title
+        - confidence
+
+    RecommendationExplanation:
+      type: object
+      description: Explanation and rationale behind a specific advisory recommendation.
+      properties:
+        recommendationId:
+          type: string
+          description: Identifier of the recommendation being explained.
+          example: rec_12345
+        summary:
+          type: string
+          description: Short, human-readable summary of the rationale.
+        detailedExplanation:
+          type: string
+          description: >
+            More detailed narrative explaining why this recommendation was suggested,
+            including relevant contextual factors in non-technical language.
+        contributingSignals:
+          type: array
+          description: High-level signals or factors that contributed to the suggestion.
+          items:
+            type: object
+            properties:
+              label:
+                type: string
+                description: Human-readable label for the contributing signal.
+                example: Consistent underutilization of desk cluster D4 during core hours.
+              influence:
+                type: string
+                description: Qualitative indication of how strongly this signal influenced the recommendation.
+                example: high
+        confidenceBreakdown:
+          type: object
+          description: Optional breakdown of the confidence level in human-readable form.
+          properties:
+            overall:
+              type: number
+              format: float
+              minimum: 0
+              maximum: 1
+              description: Overall confidence value associated with the recommendation.
+              example: 0.82
+            notes:
+              type: string
+              description: Qualitative notes clarifying how to interpret the confidence.
+        caveats:
+          type: array
+          description: >
+            Optional caveats, limitations, or assumptions that users should be aware of
+            when acting on this suggestion.
+          items:
+            type: string
+      required:
+        - recommendationId
+        - summary
+
+    Error:
+      type: object
+      description: Standard error response wrapper.
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code.
+          example: INVALID_TIME_RANGE
+        message:
+          type: string
+          description: Human-readable error message.
+        traceId:
+          type: string
+          description: Optional correlation identifier for troubleshooting.
+      required:
+        - code
+        - message
+
+  responses:
+    BadRequest:
+      description: The request was invalid or malformed.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication is required or has failed.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: The caller is authenticated but not authorized to perform this operation.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: The requested resource does not exist.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalError:
+      description: An unexpected error occurred while processing the request.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+
