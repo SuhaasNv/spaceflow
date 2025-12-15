@@ -284,7 +284,7 @@ export const AiRecommendationsPanel = () => {
       sx={{
         display: "flex",
         flexDirection: "column",
-        gap: 2
+        gap: 2.5
       }}
     >
       <Box
@@ -292,10 +292,17 @@ export const AiRecommendationsPanel = () => {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          gap: 1
+          gap: 1.5
         }}
       >
-        <Box>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+          <Typography
+            variant="overline"
+            color="primary.light"
+            sx={{ letterSpacing: "0.16em" }}
+          >
+            SpaceFlow AI
+          </Typography>
           <Typography variant="h6">AI Recommendations</Typography>
           <Typography
             variant="caption"
@@ -321,7 +328,7 @@ export const AiRecommendationsPanel = () => {
         sx={{
           display: "flex",
           flexDirection: "column",
-          gap: 1.5
+          gap: 2
         }}
       >
         {loading && (
@@ -329,16 +336,15 @@ export const AiRecommendationsPanel = () => {
             {[0, 1, 2].map((key) => (
               <Box
                 key={key}
-                sx={{
+                sx={(theme) => ({
                   p: 2,
                   borderRadius: 2,
-                  bgcolor: "background.paper",
-                  border: (theme) =>
-                    `1px solid ${theme.palette.divider}`,
+                  bgcolor: "rgba(15, 23, 42, 0.9)",
+                  border: `1px solid ${theme.palette.divider}`,
                   display: "flex",
                   flexDirection: "column",
                   gap: 1
-                }}
+                })}
               >
                 <Skeleton variant="text" width="60%" />
                 <Skeleton variant="text" width="40%" />
@@ -354,7 +360,7 @@ export const AiRecommendationsPanel = () => {
             sx={{
               p: 2,
               borderRadius: 2,
-              bgcolor: "background.paper",
+              bgcolor: "rgba(15, 23, 42, 0.9)",
               border: (theme) =>
                 `1px solid ${theme.palette.error.light}`,
               display: "flex",
@@ -378,12 +384,25 @@ export const AiRecommendationsPanel = () => {
 
         {!loading && !error && !hasRecommendations && (
           <Box
-            sx={{
-              p: 2,
-              borderRadius: 2,
-              bgcolor: "background.paper",
-              border: (theme) => `1px dashed ${theme.palette.divider}`
-            }}
+            sx={(theme) => ({
+              p: 2.5,
+              borderRadius: 2.5,
+              bgcolor: "rgba(15, 23, 42, 0.96)",
+              border: `1px dashed ${theme.palette.primary.main}33`,
+              boxShadow:
+                "0 18px 40px rgba(15, 23, 42, 0.9), 0 0 0 1px rgba(15, 23, 42, 0.9)",
+              position: "relative",
+              overflow: "hidden",
+              "&::before": {
+                content: '""',
+                position: "absolute",
+                inset: "-40% -40% auto",
+                background:
+                  "radial-gradient(circle at top, rgba(74, 222, 128, 0.16), transparent 60%)",
+                opacity: 0.9,
+                pointerEvents: "none"
+              }
+            })}
           >
             <Box
               sx={{
@@ -391,21 +410,63 @@ export const AiRecommendationsPanel = () => {
                 flexDirection: "column",
                 alignItems: "center",
                 textAlign: "center",
-                gap: 1
+                gap: 1.5
               }}
             >
-              <LightbulbOutlinedIcon fontSize="large" color="disabled" />
-              <Typography variant="subtitle1">
-                No AI recommendations just yet
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                As SpaceFlow observes more workspace activity, advisory
-                suggestions may appear here to help you fine-tune your space
-                usage.
-              </Typography>
-              <Typography variant="caption" color="text.disabled">
-                These insights are optional and non-authoritative.
-              </Typography>
+              <Box
+                sx={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 56,
+                  height: 56,
+                  borderRadius: "50%",
+                  bgcolor: "rgba(15, 23, 42, 0.9)",
+                  border: (theme) =>
+                    `1px solid ${theme.palette.primary.main}66`,
+                  boxShadow:
+                    "0 0 0 1px rgba(15, 23, 42, 0.9), 0 0 30px rgba(74, 222, 128, 0.45)",
+                  animation: "sfAiGlowPulse 2200ms ease-in-out infinite",
+                  "@keyframes sfAiGlowPulse": {
+                    "0%": {
+                      transform: "scale(1)",
+                      boxShadow:
+                        "0 0 0 1px rgba(15, 23, 42, 0.9), 0 0 18px rgba(74, 222, 128, 0.4)"
+                    },
+                    "50%": {
+                      transform: "scale(1.04)",
+                      boxShadow:
+                        "0 0 0 1px rgba(34, 197, 94, 0.7), 0 0 30px rgba(74, 222, 128, 0.8)"
+                    },
+                    "100%": {
+                      transform: "scale(1)",
+                      boxShadow:
+                        "0 0 0 1px rgba(15, 23, 42, 0.9), 0 0 18px rgba(74, 222, 128, 0.4)"
+                    }
+                  }
+                }}
+              >
+                <LightbulbOutlinedIcon
+                  fontSize="medium"
+                  sx={{
+                    color: "primary.light"
+                  }}
+                />
+              </Box>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+                <Typography variant="subtitle1">
+                  No AI recommendations just yet
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  As SpaceFlow observes more workspace activity across bookings,
+                  sensors, and access patterns, advisory suggestions will begin
+                  to appear here to help you fine-tune your space usage.
+                </Typography>
+                <Typography variant="caption" color="text.disabled">
+                  These insights are optional, advisory-only, and are not a
+                  substitute for your own judgment.
+                </Typography>
+              </Box>
             </Box>
           </Box>
         )}
@@ -416,9 +477,9 @@ export const AiRecommendationsPanel = () => {
             <Box
               key={rec.id}
               sx={(theme) => ({
-                p: 2,
-                borderRadius: 2,
-                bgcolor: "background.paper",
+                p: 2.1,
+                borderRadius: 2.5,
+                bgcolor: "rgba(15, 23, 42, 0.92)",
                 border: `1px solid ${theme.palette.divider}`,
                 display: "flex",
                 flexDirection: "column",
@@ -430,7 +491,8 @@ export const AiRecommendationsPanel = () => {
                   }
                 ),
                 "&:hover": {
-                  boxShadow: theme.shadows[2],
+                  boxShadow:
+                    "0 0 0 1px rgba(74, 222, 128, 0.6), 0 14px 30px rgba(15, 23, 42, 0.95)",
                   transform: "translateY(-2px)",
                   borderColor: theme.palette.primary.light
                 }
