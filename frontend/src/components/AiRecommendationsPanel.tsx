@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import LightbulbOutlinedIcon from "@mui/icons-material/LightbulbOutlined";
 import { aiEngineApi } from "../api/aiEngineApi";
 
 interface AiRecommendation {
@@ -107,6 +108,77 @@ const normalizeExplanationResponse = (
     contributingSignals,
     confidenceNotes
   };
+};
+
+type ConfidenceVisualLevel = "high" | "medium" | "low";
+
+const getConfidenceVisualLevel = (
+  confidencePercent: number
+): ConfidenceVisualLevel => {
+  // NOTE: The backend is expected to provide a 0–100 confidencePercent value.
+  // We do not transform this value – we only apply visual thresholds on the
+  // same 0–100 scale for UI coloring.
+  if (confidencePercent > 75) {
+    return "high";
+  }
+  if (confidencePercent >= 40) {
+    return "medium";
+  }
+  return "low";
+};
+
+const getConfidenceColor = (
+  confidencePercent: number | null | undefined
+):
+  | "inherit"
+  | "primary"
+  | "secondary"
+  | "error"
+  | "info"
+  | "success"
+  | "warning" => {
+  if (typeof confidencePercent !== "number") {
+    return "inherit";
+  }
+
+  const level = getConfidenceVisualLevel(confidencePercent);
+
+  if (level === "high") {
+    return "success";
+  }
+  if (level === "medium") {
+    return "warning";
+  }
+
+  // Low confidence – render with a neutral/gray style via inherit.
+  return "inherit";
+};
+
+const getConfidenceLabel = (
+  confidencePercent: number | null | undefined
+): string => {
+  if (typeof confidencePercent !== "number") {
+    return "Confidence not provided";
+  }
+
+  const level = getConfidenceVisualLevel(confidencePercent);
+
+  if (level === "high") {
+    return "High confidence (advisory)";
+  }
+  if (level === "medium") {
+    return "Medium confidence (advisory)";
+  }
+  return "Low confidence (advisory)";
+};
+
+const getSuggestedAction = (rec: AiRecommendation): string | null => {
+  if (!rec.title) {
+    return null;
+  }
+
+  // UI-only, advisory phrasing derived from the recommendation title.
+  return `Consider taking a light, non-binding follow-up related to "${rec.title}" with your workspace or operations team.`;
 };
 
 export const AiRecommendationsPanel = () => {
@@ -310,13 +382,31 @@ export const AiRecommendationsPanel = () => {
               p: 2,
               borderRadius: 2,
               bgcolor: "background.paper",
-              border: (theme) =>
-                `1px dashed ${theme.palette.divider}`
+              border: (theme) => `1px dashed ${theme.palette.divider}`
             }}
           >
-            <Typography variant="body2" color="text.secondary">
-              No recommendations available.
-            </Typography>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                textAlign: "center",
+                gap: 1
+              }}
+            >
+              <LightbulbOutlinedIcon fontSize="large" color="disabled" />
+              <Typography variant="subtitle1">
+                No AI recommendations just yet
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                As SpaceFlow observes more workspace activity, advisory
+                suggestions may appear here to help you fine-tune your space
+                usage.
+              </Typography>
+              <Typography variant="caption" color="text.disabled">
+                These insights are optional and non-authoritative.
+              </Typography>
+            </Box>
           </Box>
         )}
 
@@ -394,24 +484,69 @@ export const AiRecommendationsPanel = () => {
                   Confidence
                 </Typography>
                 {typeof rec.confidencePercent === "number" ? (
-                  <LinearProgress
-                    variant="determinate"
-                    // We assume the backend sends a 0–100 value and do not
-                    // derive or transform it.
-                    value={rec.confidencePercent}
-                    sx={{
-                      height: 6,
-                      borderRadius: 3,
-                      bgcolor: "action.hover"
-                    }}
-                    aria-label="Recommendation confidence"
-                  />
+                  <Box
+                    sx={(theme) => ({
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 0.5,
+                      "& .MuiLinearProgress-root": {
+                        bgcolor: theme.palette.action.hover
+                      },
+                      "& .MuiLinearProgress-bar": {
+                        transition: theme.transitions.create(
+                          "background-color",
+                          {
+                            duration: theme.transitions.duration.shorter
+                          }
+                        )
+                      }
+                    })}
+                  >
+                    <LinearProgress
+                      variant="determinate"
+                      // The backend is expected to send a 0–100 value. We use
+                      // it directly for the bar and only apply visual
+                      // thresholds for coloring.
+                      value={rec.confidencePercent}
+                      color={getConfidenceColor(rec.confidencePercent)}
+                      sx={{
+                        height: 6,
+                        borderRadius: 3
+                      }}
+                      aria-label="Recommendation confidence"
+                    />
+                    <Typography variant="caption" color="text.secondary">
+                      {getConfidenceLabel(rec.confidencePercent)}
+                    </Typography>
+                  </Box>
                 ) : (
                   <Typography variant="caption" color="text.disabled">
                     No confidence score provided.
                   </Typography>
                 )}
               </Box>
+
+              {(() => {
+                const suggested = getSuggestedAction(rec);
+                if (!suggested) {
+                  return null;
+                }
+
+                return (
+                  <Box sx={{ mt: 1 }}>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ display: "block", fontWeight: 500, mb: 0.25 }}
+                    >
+                      Suggested action (advisory, UI-only)
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {suggested}
+                    </Typography>
+                  </Box>
+                );
+              })()}
 
               <Box
                 sx={{
