@@ -1,0 +1,710 @@
+openapi: 3.0.3
+info:
+  title: SpaceFlow Analytics Service API
+  version: 1.0.0
+  description: >
+    Read-only, aggregated analytics for utilization and booking vs usage.
+    Results are derived from upstream services, may be delayed or approximate,
+    and are **non-authoritative**. No raw events are exposed.
+
+servers:
+  - url: /api/v1
+    description: Analytics API v1
+
+paths:
+  /utilization:
+    get:
+      summary: Retrieve utilization metrics
+      description: >
+        Returns aggregated utilization metrics over a time range for a given scope.
+        Data is derived from booking and occupancy services and may be delayed,
+        approximate, or incomplete. Results are non-authoritative and not suitable
+        for enforcement or billing.
+      operationId: getUtilization
+      parameters:
+        - name: scopeType
+          in: query
+          required: true
+          description: Logical scope to aggregate over.
+          schema:
+            type: string
+            enum: [organization, building, floor, space]
+        - name: scopeId
+          in: query
+          required: false
+          description: >
+            Identifier of the scope. Optional for organization-wide queries.
+          schema:
+            type: string
+        - name: from
+          in: query
+          required: true
+          description: Start of the reporting window (inclusive).
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          required: true
+          description: End of the reporting window (exclusive).
+          schema:
+            type: string
+            format: date-time
+        - name: granularity
+          in: query
+          required: false
+          description: >
+            Optional aggregation granularity. If omitted, the service chooses a
+            reasonable default based on the requested window.
+          schema:
+            type: string
+            enum: [hourly, daily, weekly, monthly]
+        - name: groupBy
+          in: query
+          required: false
+          description: >
+            Optional logical dimension to group results by (for example,
+            `"space"`, `"floor"`, `"zone"`). Values are interpreted in a
+            best-effort, implementation-specific way.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Aggregated utilization metrics.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UtilizationResponse'
+        '400':
+          description: Invalid query parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Caller is not authorized to view analytics for the requested scope.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Unexpected error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /booking-usage:
+    get:
+      summary: Retrieve booking vs usage summaries
+      description: >
+        Returns aggregated comparisons of booked vs actual usage over time.
+        Data is derived from multiple services and may be delayed,
+        approximate, or incomplete. Results are non-authoritative and not
+        suitable for enforcement or billing.
+      operationId: getBookingUsage
+      parameters:
+        - name: scopeType
+          in: query
+          required: true
+          description: Logical scope to aggregate over.
+          schema:
+            type: string
+            enum: [organization, building, floor, space]
+        - name: scopeId
+          in: query
+          required: false
+          description: Identifier of the scope. Optional for organization-wide queries.
+          schema:
+            type: string
+        - name: from
+          in: query
+          required: true
+          description: Start of the reporting window (inclusive).
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          required: true
+          description: End of the reporting window (exclusive).
+          schema:
+            type: string
+            format: date-time
+        - name: granularity
+          in: query
+          required: false
+          description: Optional aggregation granularity.
+          schema:
+            type: string
+            enum: [daily, weekly, monthly]
+      responses:
+        '200':
+          description: Aggregated booking vs usage summaries.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingUsageResponse'
+        '400':
+          description: Invalid query parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Caller is not authorized to view analytics for the requested scope.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Unexpected error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /patterns:
+    get:
+      summary: Retrieve temporal and pattern-based insights
+      description: >
+        Returns high-level temporal and behavioral patterns such as typical
+        peak periods or recurring under-utilization. Insights are derived,
+        heuristic, and approximate. They are non-authoritative and should not
+        be used for automated enforcement.
+      operationId: getPatterns
+      parameters:
+        - name: scopeType
+          in: query
+          required: true
+          description: Logical scope to analyze.
+          schema:
+            type: string
+            enum: [organization, building, floor, space]
+        - name: scopeId
+          in: query
+          required: false
+          description: Identifier of the scope. Optional for organization-wide queries.
+          schema:
+            type: string
+        - name: from
+          in: query
+          required: false
+          description: Optional start of the analysis window.
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          required: false
+          description: Optional end of the analysis window.
+          schema:
+            type: string
+            format: date-time
+        - name: focus
+          in: query
+          required: false
+          description: >
+            Optional focus area for the analysis (for example, `"peaks"`,
+            `"no-shows"`, `"underutilization"`). Values are interpreted in a
+            best-effort, implementation-specific way.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Derived pattern-based insights.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatternInsightsResponse'
+        '400':
+          description: Invalid query parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Caller is not authorized to view analytics for the requested scope.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Unexpected error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /segments/comparisons:
+    get:
+      summary: Retrieve segmented or comparative analytics
+      description: >
+        Returns aggregated metrics broken down by one or more segments for
+        comparative analysis (for example, building vs building or space type
+        vs space type). Data is aggregated and approximate and is not
+        authoritative.
+      operationId: getSegmentComparisons
+      parameters:
+        - name: scopeType
+          in: query
+          required: true
+          description: Logical parent scope containing the segments.
+          schema:
+            type: string
+            enum: [organization, building, floor]
+        - name: scopeId
+          in: query
+          required: false
+          description: Identifier of the parent scope. Optional for organization-wide queries.
+          schema:
+            type: string
+        - name: from
+          in: query
+          required: true
+          description: Start of the reporting window (inclusive).
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          required: true
+          description: End of the reporting window (exclusive).
+          schema:
+            type: string
+            format: date-time
+        - name: segmentBy
+          in: query
+          required: true
+          description: >
+            Logical dimension to segment by (for example, `"building"`,
+            `"floor"`, `"spaceType"`). Values are interpreted in a
+            best-effort, implementation-specific way.
+          schema:
+            type: string
+        - name: metric
+          in: query
+          required: false
+          description: >
+            Optional primary metric to emphasize (for example,
+            `"utilization"`, `"bookingCount"`). If omitted, a default set of
+            metrics is returned.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Aggregated segmented analytics.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SegmentComparisonResponse'
+        '400':
+          description: Invalid query parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Caller is not authorized to view analytics for the requested scope.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Unexpected error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /snapshots:
+    get:
+      summary: Retrieve snapshot or baseline summaries
+      description: >
+        Returns aggregated snapshot metrics for a specific point in time or a
+        baseline window (for example, typical weekday utilization). Snapshots
+        are derived and approximate and may lag behind source systems. They
+        are non-authoritative.
+      operationId: getSnapshots
+      parameters:
+        - name: scopeType
+          in: query
+          required: true
+          description: Logical scope for the snapshot.
+          schema:
+            type: string
+            enum: [organization, building, floor, space]
+        - name: scopeId
+          in: query
+          required: false
+          description: Identifier of the scope. Optional for organization-wide queries.
+          schema:
+            type: string
+        - name: asOf
+          in: query
+          required: false
+          description: >
+            Point-in-time for the snapshot. If omitted, a service-defined
+            default is used (for example, latest complete day).
+          schema:
+            type: string
+            format: date-time
+        - name: baselineWindow
+          in: query
+          required: false
+          description: >
+            Optional symbolic baseline window such as `"typical_weekday"` or
+            `"last_30_days"`. Interpreted in a best-effort,
+            implementation-specific way.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Aggregated snapshot or baseline summaries.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SnapshotResponse'
+        '400':
+          description: Invalid query parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Caller is not authorized to view analytics for the requested scope.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Unexpected error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    Scope:
+      type: object
+      description: Logical reporting scope for the analytics result.
+      properties:
+        type:
+          type: string
+          description: Scope type (for example, organization, building, floor, space).
+        id:
+          type: string
+          description: Identifier of the scope, if applicable.
+        name:
+          type: string
+          description: Human-readable name of the scope, if available.
+
+    TimeRange:
+      type: object
+      description: Time range over which metrics were aggregated.
+      properties:
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+
+    UtilizationPoint:
+      type: object
+      description: Aggregated utilization metrics for a single bucket.
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Start of the aggregation bucket.
+        groupKey:
+          type: string
+          nullable: true
+          description: >
+            Optional grouping key when `groupBy` is used (for example, a
+            space identifier).
+        utilizationPercent:
+          type: number
+          format: double
+          nullable: true
+          description: Percentage utilization for the bucket, if computable.
+        occupiedCount:
+          type: integer
+          format: int64
+          nullable: true
+          description: Approximate number of occupied units during the bucket.
+        capacity:
+          type: integer
+          format: int64
+          nullable: true
+          description: Approximate capacity associated with the bucket.
+        sampleSize:
+          type: integer
+          format: int64
+          nullable: true
+          description: >
+            Approximate number of underlying observations contributing to the
+            bucket.
+        isPartial:
+          type: boolean
+          description: >
+            Indicates that data for this bucket may be incomplete (for
+            example, still processing).
+
+    UtilizationResponse:
+      type: object
+      description: Aggregated utilization metrics over a time range.
+      properties:
+        scope:
+          $ref: '#/components/schemas/Scope'
+        timeRange:
+          $ref: '#/components/schemas/TimeRange'
+        granularity:
+          type: string
+          description: Effective aggregation granularity applied by the service.
+        notes:
+          type: string
+          description: Human-readable notes about approximations or data coverage.
+        points:
+          type: array
+          items:
+            $ref: '#/components/schemas/UtilizationPoint'
+
+    BookingUsageBucket:
+      type: object
+      description: Aggregated booking vs usage metrics for a time bucket.
+      properties:
+        periodStart:
+          type: string
+          format: date-time
+        periodEnd:
+          type: string
+          format: date-time
+        bookedCount:
+          type: integer
+          format: int64
+          description: Approximate number of bookings in the period.
+        usedCount:
+          type: integer
+          format: int64
+          description: Approximate number of bookings that resulted in actual usage.
+        noShowCount:
+          type: integer
+          format: int64
+          description: Approximate number of bookings with no detected usage.
+        cancelledCount:
+          type: integer
+          format: int64
+          description: Approximate number of cancelled bookings.
+        utilizationPercent:
+          type: number
+          format: double
+          nullable: true
+          description: >
+            Approximate utilization relative to booked capacity or expected
+            usage.
+
+    BookingUsageResponse:
+      type: object
+      description: Aggregated booking vs usage summaries over a time range.
+      properties:
+        scope:
+          $ref: '#/components/schemas/Scope'
+        timeRange:
+          $ref: '#/components/schemas/TimeRange'
+        granularity:
+          type: string
+        notes:
+          type: string
+        buckets:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookingUsageBucket'
+
+    PatternInsight:
+      type: object
+      description: Generic representation of a derived pattern or temporal insight.
+      properties:
+        id:
+          type: string
+          description: Opaque identifier for the insight.
+        type:
+          type: string
+          description: >
+            High-level insight type (for example, "peak_period", "no_show_pattern").
+        dimension:
+          type: string
+          nullable: true
+          description: Dimension the pattern relates to (for example, "weekday", "hourOfDay").
+        period:
+          type: string
+          nullable: true
+          description: >
+            Human-readable description of the temporal focus (for example,
+            "Weekdays 10:00-12:00").
+        value:
+          type: number
+          format: double
+          nullable: true
+          description: Numeric value associated with the pattern, if applicable.
+        confidence:
+          type: number
+          format: double
+          nullable: true
+          description: Relative confidence score in the pattern, if available.
+        notes:
+          type: string
+          nullable: true
+          description: Additional human-readable interpretation or caveats.
+
+    PatternInsightsResponse:
+      type: object
+      description: Collection of derived temporal or behavioral insights.
+      properties:
+        scope:
+          $ref: '#/components/schemas/Scope'
+        timeRange:
+          $ref: '#/components/schemas/TimeRange'
+        notes:
+          type: string
+        insights:
+          type: array
+          items:
+            $ref: '#/components/schemas/PatternInsight'
+
+    SegmentMetric:
+      type: object
+      description: Single aggregated metric value for a segment.
+      properties:
+        name:
+          type: string
+          description: Metric name (for example, "utilization", "bookingCount").
+        value:
+          type: number
+          format: double
+          nullable: true
+          description: Aggregated metric value for the segment.
+
+    SegmentResult:
+      type: object
+      description: Aggregated metrics for a single segment.
+      properties:
+        segmentKey:
+          type: string
+          description: Identifier or label of the segment.
+        segmentLabel:
+          type: string
+          nullable: true
+          description: Human-readable label for the segment, if available.
+        metrics:
+          type: array
+          items:
+            $ref: '#/components/schemas/SegmentMetric'
+
+    SegmentComparisonResponse:
+      type: object
+      description: Aggregated metrics broken down by one or more segments.
+      properties:
+        scope:
+          $ref: '#/components/schemas/Scope'
+        timeRange:
+          $ref: '#/components/schemas/TimeRange'
+        segmentBy:
+          type: string
+        notes:
+          type: string
+        segments:
+          type: array
+          items:
+            $ref: '#/components/schemas/SegmentResult'
+
+    SnapshotMetric:
+      type: object
+      description: Aggregated metric value included in a snapshot.
+      properties:
+        name:
+          type: string
+          description: Metric name.
+        value:
+          type: number
+          format: double
+          nullable: true
+          description: Aggregated metric value.
+
+    SnapshotSummary:
+      type: object
+      description: Aggregated snapshot or baseline summary.
+      properties:
+        asOf:
+          type: string
+          format: date-time
+          description: Effective timestamp for the snapshot.
+        baselineWindow:
+          type: string
+          nullable: true
+          description: >
+            Symbolic baseline window used, if any (for example, "typical_weekday").
+        notes:
+          type: string
+          nullable: true
+        metrics:
+          type: array
+          items:
+            $ref: '#/components/schemas/SnapshotMetric'
+
+    SnapshotResponse:
+      type: object
+      description: Aggregated snapshot or baseline summaries for a scope.
+      properties:
+        scope:
+          $ref: '#/components/schemas/Scope'
+        summary:
+          $ref: '#/components/schemas/SnapshotSummary'
+
+    ErrorResponse:
+      type: object
+      description: Error payload for unsuccessful requests.
+      properties:
+        code:
+          type: string
+          description: Stable, machine-readable error code.
+        message:
+          type: string
+          description: Human-readable error message.
+        details:
+          type: object
+          additionalProperties: true
+          description: Optional structured details about the error.
+
