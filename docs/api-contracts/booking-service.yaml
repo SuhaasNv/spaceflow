@@ -1,0 +1,420 @@
+openapi: 3.0.0
+info:
+  title: Booking Service API
+  description: Booking management API for planned office space usage in the SpaceFlow platform
+  version: 1.0.0
+servers:
+  - url: /api/v1
+    description: Booking Service API v1
+
+paths:
+  /bookings:
+    post:
+      summary: Create a booking
+      description: Creates a new booking for a specific space and time period. Validates availability and checks for conflicts with existing bookings. Returns the created booking with a unique identifier.
+      operationId: createBooking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingRequest'
+      responses:
+        '201':
+          description: Booking created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          description: Invalid request or time period
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Space unavailable or conflict detected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictErrorResponse'
+        '404':
+          description: Space not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permission denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      summary: Retrieve bookings
+      description: Retrieves bookings for a specific space within a time window. Returns a collection of matching bookings.
+      operationId: getBookings
+      parameters:
+        - name: spaceId
+          in: query
+          description: Space identifier
+          required: true
+          schema:
+            type: string
+        - name: startTime
+          in: query
+          description: Start time of the time window (ISO 8601 format)
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: endTime
+          in: query
+          description: End time of the time window (ISO 8601 format)
+          required: true
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Bookings retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  bookings:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Booking'
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permission denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /bookings/{bookingId}:
+    patch:
+      summary: Modify a booking
+      description: Modifies an existing booking. Validates availability and checks for conflicts based on the modified parameters. Rejects changes that would create conflicts with other bookings.
+      operationId: updateBooking
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          description: Unique booking identifier
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingUpdateRequest'
+      responses:
+        '200':
+          description: Booking modified successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          description: Invalid request or time period
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Modification would create a conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictErrorResponse'
+        '403':
+          description: Permission denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Booking in invalid state for modification
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Cancel a booking
+      description: Cancels an existing booking. Immediately removes the booking and makes the space and time available for new bookings.
+      operationId: cancelBooking
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          description: Unique booking identifier
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Booking canceled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  bookingId:
+                    type: string
+                  status:
+                    type: string
+                    example: canceled
+        '404':
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Permission denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Booking in invalid state for cancellation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /spaces/{spaceId}/availability:
+    get:
+      summary: Check space availability
+      description: Checks whether a specific space is available during a requested time period. Returns availability status and information about any conflicting bookings.
+      operationId: checkAvailability
+      parameters:
+        - name: spaceId
+          in: path
+          required: true
+          description: Space identifier
+          schema:
+            type: string
+        - name: startTime
+          in: query
+          required: true
+          description: Start time for availability check (ISO 8601 format)
+          schema:
+            type: string
+            format: date-time
+        - name: endTime
+          in: query
+          required: true
+          description: End time for availability check (ISO 8601 format)
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Availability check completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvailabilityResponse'
+        '400':
+          description: Invalid time period
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Space not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    Booking:
+      type: object
+      required:
+        - bookingId
+        - spaceId
+        - ownerReference
+        - startTime
+        - endTime
+        - status
+        - createdAt
+      properties:
+        bookingId:
+          type: string
+          description: Unique identifier for the booking
+        spaceId:
+          type: string
+          description: Identifier of the reserved space
+        ownerReference:
+          type: string
+          description: Opaque identifier supplied by caller context
+        startTime:
+          type: string
+          format: date-time
+          description: Start time of the booking (ISO 8601 format)
+        endTime:
+          type: string
+          format: date-time
+          description: End time of the booking (ISO 8601 format)
+        purpose:
+          type: string
+          description: Purpose or description of the booking
+        attendeeCount:
+          type: integer
+          description: Number of attendees expected
+        status:
+          type: string
+          enum: [active, canceled]
+          description: Current status of the booking
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the booking was created
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the booking was last modified
+
+    BookingRequest:
+      type: object
+      required:
+        - spaceId
+        - startTime
+        - endTime
+      properties:
+        spaceId:
+          type: string
+          description: Identifier of the space to reserve
+        startTime:
+          type: string
+          format: date-time
+          description: Start time of the booking (ISO 8601 format)
+        endTime:
+          type: string
+          format: date-time
+          description: End time of the booking (ISO 8601 format)
+        purpose:
+          type: string
+          description: Purpose or description of the booking
+        attendeeCount:
+          type: integer
+          description: Number of attendees expected
+
+    BookingUpdateRequest:
+      type: object
+      properties:
+        spaceId:
+          type: string
+          description: New space identifier
+        startTime:
+          type: string
+          format: date-time
+          description: New start time (ISO 8601 format)
+        endTime:
+          type: string
+          format: date-time
+          description: New end time (ISO 8601 format)
+        purpose:
+          type: string
+          description: Updated purpose or description
+        attendeeCount:
+          type: integer
+          description: Updated number of attendees
+
+    AvailabilityResponse:
+      type: object
+      required:
+        - available
+        - spaceId
+        - startTime
+        - endTime
+      properties:
+        available:
+          type: boolean
+          description: Whether the space is available during the requested time period
+        spaceId:
+          type: string
+          description: Identifier of the checked space
+        startTime:
+          type: string
+          format: date-time
+          description: Start time of the checked period
+        endTime:
+          type: string
+          format: date-time
+          description: End time of the checked period
+        conflictingBookings:
+          type: array
+          description: List of existing bookings that conflict with the requested time period
+          items:
+            type: object
+            properties:
+              bookingId:
+                type: string
+              startTime:
+                type: string
+                format: date-time
+              endTime:
+                type: string
+                format: date-time
+
+    ConflictErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          example: conflict_detected
+        message:
+          type: string
+          description: Description of the conflict
+        conflictingBookings:
+          type: array
+          description: Information about bookings that cause the conflict
+          items:
+            type: object
+            properties:
+              bookingId:
+                type: string
+              startTime:
+                type: string
+                format: date-time
+              endTime:
+                type: string
+                format: date-time
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error code or type
+        message:
+          type: string
+          description: Human-readable error message
+
