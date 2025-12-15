@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Arrays;
 import java.util.Collections;
 
 @RestController
@@ -39,8 +40,45 @@ public class AnalyticsController {
         timeRange.setTo(to);
         response.setTimeRange(timeRange);
         response.setGranularity(granularity != null ? granularity : "daily");
-        response.setNotes("Stub response");
-        response.setPoints(Collections.emptyList());
+
+        // DEV SEED DATA: temporary hardcoded utilization points for development-only charts.
+        // This block should only be used while no real analytics pipeline is wired up.
+        // It is intentionally simple and easy to remove once real data is available.
+        if (true) { // Replace this guard when real utilization data retrieval is implemented.
+            com.spaceflow.analytics.dto.UtilizationPoint p1 = new com.spaceflow.analytics.dto.UtilizationPoint();
+            p1.setTimestamp("2025-01-13T09:00:00Z");
+            p1.setGroupKey(scopeType != null ? scopeType : "workspace");
+            p1.setUtilizationPercent(0.42);
+            p1.setOccupiedCount(42L);
+            p1.setCapacity(100L);
+            p1.setSampleSize(84L);
+            p1.setPartial(false);
+
+            com.spaceflow.analytics.dto.UtilizationPoint p2 = new com.spaceflow.analytics.dto.UtilizationPoint();
+            p2.setTimestamp("2025-01-13T13:00:00Z");
+            p2.setGroupKey(scopeType != null ? scopeType : "workspace");
+            p2.setUtilizationPercent(0.67);
+            p2.setOccupiedCount(67L);
+            p2.setCapacity(100L);
+            p2.setSampleSize(120L);
+            p2.setPartial(false);
+
+            com.spaceflow.analytics.dto.UtilizationPoint p3 = new com.spaceflow.analytics.dto.UtilizationPoint();
+            p3.setTimestamp("2025-01-13T17:00:00Z");
+            p3.setGroupKey(scopeType != null ? scopeType : "workspace");
+            p3.setUtilizationPercent(0.51);
+            p3.setOccupiedCount(51L);
+            p3.setCapacity(100L);
+            p3.setSampleSize(95L);
+            p3.setPartial(true); // Last bucket often represents a partial hour/window.
+
+            response.setNotes("DEV SEED DATA – stubbed utilization metrics for development only; not real analytics.");
+            response.setPoints(Arrays.asList(p1, p2, p3));
+        } else {
+            // Fallback stub when/if real data retrieval is introduced but yields no results.
+            response.setNotes("Stub response");
+            response.setPoints(Collections.emptyList());
+        }
 
         return ResponseEntity.ok(response);
     }
