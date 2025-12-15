@@ -13,7 +13,7 @@ import {
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
 import LogoutIcon from "@mui/icons-material/Logout";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../auth/useAuth";
 import { useNavigate } from "react-router-dom";
 
 type TopBarProps = {
@@ -37,18 +37,15 @@ export const TopBar = ({ onMenuClick, isSidebarOpen }: TopBarProps) => {
 
   const handleLogout = () => {
     logout();
-    navigate("/login", { replace: true });
+    navigate("/", { replace: true });
     handleClose();
   };
 
-  // Get user initials for avatar
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
+  // Get user initials from email (first letter of local part and domain)
+  const getInitials = (email: string) => {
+    const localPart = email.split("@")[0];
+    const domainPart = email.split("@")[1]?.[0] || "";
+    return (localPart[0]?.toUpperCase() || "") + (domainPart.toUpperCase() || "").slice(0, 1);
   };
 
   if (!user) {
@@ -223,7 +220,7 @@ export const TopBar = ({ onMenuClick, isSidebarOpen }: TopBarProps) => {
                 flexShrink: 0
               }}
             >
-              {getInitials(user.name)}
+              {getInitials(user.email)}
             </Avatar>
             <Box
               sx={{
@@ -246,7 +243,7 @@ export const TopBar = ({ onMenuClick, isSidebarOpen }: TopBarProps) => {
                   maxWidth: "200px"
                 }}
               >
-                {user.name}
+                {user.email}
               </Typography>
               <Typography
                 variant="caption"
@@ -291,13 +288,10 @@ export const TopBar = ({ onMenuClick, isSidebarOpen }: TopBarProps) => {
             <MenuItem disabled>
               <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                  {user.name}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
                   {user.email}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  {user.workspace}
+                  {user.role}
                 </Typography>
               </Box>
             </MenuItem>

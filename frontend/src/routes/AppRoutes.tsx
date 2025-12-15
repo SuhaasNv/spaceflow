@@ -8,18 +8,15 @@ import { Patterns } from "../pages/Patterns";
 import { Segments } from "../pages/Segments";
 import { Snapshots } from "../pages/Snapshots";
 import { Login } from "../pages/Login";
-import { ProtectedRoute } from "../components/ProtectedRoute";
-import { useAuth } from "../context/AuthContext";
+import { RequireAuth } from "../auth/RequireAuth";
+import { useAuth } from "../auth/useAuth";
 
 // Redirect logged-in users away from login page
 const LoginRoute = () => {
-  const { user, isLoading } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
-  if (isLoading) {
-    return null;
-  }
-
-  if (user) {
+  // If authenticated, redirect to dashboard
+  if (isAuthenticated && user) {
     return <Navigate to="/app/dashboard" replace />;
   }
 
@@ -34,57 +31,57 @@ export const AppRoutes = () => {
       <Route
         path="/app/dashboard"
         element={
-          <ProtectedRoute>
+          <RequireAuth>
             <Dashboard />
-          </ProtectedRoute>
+          </RequireAuth>
         }
       />
       <Route
         path="/app/utilization"
         element={
-          <ProtectedRoute>
+          <RequireAuth>
             <Utilization />
-          </ProtectedRoute>
+          </RequireAuth>
         }
       />
       <Route
         path="/app/booking-usage"
         element={
-          <ProtectedRoute>
+          <RequireAuth>
             <BookingUsage />
-          </ProtectedRoute>
+          </RequireAuth>
         }
       />
       <Route
         path="/app/recommendations"
         element={
-          <ProtectedRoute>
+          <RequireAuth>
             <Recommendations />
-          </ProtectedRoute>
+          </RequireAuth>
         }
       />
       <Route
         path="/app/patterns"
         element={
-          <ProtectedRoute>
+          <RequireAuth>
             <Patterns />
-          </ProtectedRoute>
+          </RequireAuth>
         }
       />
       <Route
         path="/app/segments"
         element={
-          <ProtectedRoute>
+          <RequireAuth>
             <Segments />
-          </ProtectedRoute>
+          </RequireAuth>
         }
       />
       <Route
         path="/app/snapshots"
         element={
-          <ProtectedRoute>
+          <RequireAuth>
             <Snapshots />
-          </ProtectedRoute>
+          </RequireAuth>
         }
       />
       {/* Redirect old routes to new /app/* structure */}

@@ -1,54 +1,31 @@
-import { useState, FormEvent, useEffect, useRef } from "react";
+import { useState, FormEvent } from "react";
 import {
   Box,
   Button,
   TextField,
   Typography,
-  InputAdornment
+  InputAdornment,
+  IconButton
 } from "@mui/material";
 import EmailIcon from "@mui/icons-material/Email";
+import HomeIcon from "@mui/icons-material/Home";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../auth/useAuth";
 
 export const Login = () => {
   const [email, setEmail] = useState("");
-  const [error, setError] = useState("");
   const [isFocused, setIsFocused] = useState(false);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const { login } = useAuth();
   const navigate = useNavigate();
-  const containerRef = useRef<HTMLDivElement>(null);
 
   // Premium easing curve
   const premiumEasing = "cubic-bezier(0.22, 1, 0.36, 1)";
 
-  // Mouse parallax effect
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width - 0.5) * 15;
-        const y = ((e.clientY - rect.top) / rect.height - 0.5) * 15;
-        setMousePosition({ x, y });
-      }
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, []);
-
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    setError("");
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email.trim()) {
-      setError("Please enter your email");
-      return;
-    }
-
-    if (!emailRegex.test(email)) {
-      setError("Please enter a valid email address");
+    if (!emailRegex.test(email.trim())) {
       return;
     }
 
@@ -57,11 +34,9 @@ export const Login = () => {
   };
 
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const hasValue = email.trim().length > 0;
 
   return (
     <Box
-      ref={containerRef}
       sx={{
         position: "relative",
         minHeight: "100vh",
@@ -69,99 +44,70 @@ export const Login = () => {
         alignItems: "center",
         justifyContent: "center",
         overflow: "hidden",
-        bgcolor: "background.default",
-        // Animated gradient background with very slow motion
+        // Animated gradient background - navy → indigo → teal
         background: `
-          radial-gradient(circle at ${50 + mousePosition.x * 0.08}% ${50 + mousePosition.y * 0.08}%, rgba(99, 102, 241, 0.22) 0%, transparent 50%),
-          radial-gradient(circle at ${30 - mousePosition.x * 0.08}% ${70 + mousePosition.y * 0.08}%, rgba(56, 189, 248, 0.18) 0%, transparent 50%),
-          radial-gradient(circle at ${70 + mousePosition.x * 0.08}% ${30 - mousePosition.y * 0.08}%, rgba(139, 92, 246, 0.12) 0%, transparent 50%),
-          linear-gradient(135deg, #0f172a 0%, #1e293b 25%, #0f172a 50%, #1e1b4b 75%, #0f172a 100%)
+          radial-gradient(circle at 30% 40%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+          radial-gradient(circle at 70% 60%, rgba(20, 184, 166, 0.12) 0%, transparent 50%),
+          linear-gradient(135deg, #0f172a 0%, #1e293b 25%, #312e81 50%, #0f766e 75%, #0f172a 100%)
         `,
         backgroundSize: "200% 200%",
-        backgroundPosition: "center",
-        transition: `background-position 0.6s ${premiumEasing}`,
-        // Noise texture overlay
+        animation: "gradientShift 35s ease-in-out infinite",
+        "@keyframes gradientShift": {
+          "0%, 100%": {
+            backgroundPosition: "0% 50%"
+          },
+          "50%": {
+            backgroundPosition: "100% 50%"
+          }
+        },
+        // Optional faint noise texture
         "&::before": {
           content: '""',
           position: "absolute",
           inset: 0,
           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E")`,
-          opacity: 0.35,
+          opacity: 0.25,
           pointerEvents: "none",
           mixBlendMode: "overlay"
         }
       }}
     >
-      {/* Floating orbs with very slow, subtle motion */}
+      {/* Top bar with home button */}
       <Box
         sx={{
           position: "absolute",
-          width: "600px",
-          height: "600px",
-          borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, transparent 70%)",
-          top: "10%",
-          left: "10%",
-          filter: "blur(70px)",
-          animation: "floatOrb1 35s ease-in-out infinite",
-          "@keyframes floatOrb1": {
-            "0%, 100%": {
-              transform: "translate(0, 0) scale(1)",
-              opacity: 0.5
-            },
-            "50%": {
-              transform: "translate(40px, -50px) scale(1.08)",
-              opacity: 0.65
-            }
-          }
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 10,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "flex-start",
+          p: 3
         }}
-      />
-      <Box
-        sx={{
-          position: "absolute",
-          width: "500px",
-          height: "500px",
-          borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(56, 189, 248, 0.1) 0%, transparent 70%)",
-          bottom: "15%",
-          right: "15%",
-          filter: "blur(60px)",
-          animation: "floatOrb2 42s ease-in-out infinite",
-          "@keyframes floatOrb2": {
-            "0%, 100%": {
-              transform: "translate(0, 0) scale(1)",
-              opacity: 0.4
-            },
-            "50%": {
-              transform: "translate(-35px, 45px) scale(1.12)",
-              opacity: 0.6
+      >
+        <IconButton
+          onClick={() => navigate("/")}
+          sx={{
+            color: "rgba(255, 255, 255, 0.7)",
+            bgcolor: "rgba(255, 255, 255, 0.05)",
+            border: "1px solid",
+            borderColor: "rgba(148, 163, 184, 0.1)",
+            backdropFilter: "blur(12px) saturate(160%)",
+            transition: `all 0.2s ${premiumEasing}`,
+            "&:hover": {
+              color: "rgba(255, 255, 255, 0.95)",
+              bgcolor: "rgba(255, 255, 255, 0.1)",
+              borderColor: "rgba(20, 184, 166, 0.3)",
+              transform: "translateY(-1px)",
+              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2), 0 0 20px rgba(20, 184, 166, 0.1)"
             }
-          }
-        }}
-      />
-      <Box
-        sx={{
-          position: "absolute",
-          width: "400px",
-          height: "400px",
-          borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(139, 92, 246, 0.08) 0%, transparent 70%)",
-          top: "50%",
-          right: "5%",
-          filter: "blur(55px)",
-          animation: "floatOrb3 38s ease-in-out infinite",
-          "@keyframes floatOrb3": {
-            "0%, 100%": {
-              transform: "translate(0, 0) scale(1)",
-              opacity: 0.35
-            },
-            "50%": {
-              transform: "translate(30px, -40px) scale(1.15)",
-              opacity: 0.5
-            }
-          }
-        }}
-      />
+          }}
+          aria-label="Go to home page"
+        >
+          <HomeIcon />
+        </IconButton>
+      </Box>
 
       {/* Center glassmorphism card */}
       <Box
@@ -170,17 +116,17 @@ export const Login = () => {
           width: "100%",
           maxWidth: "480px",
           mx: 3,
-          animation: `cardEntrance 1s ${premiumEasing} forwards`,
+          animation: `cardFloatIn 1s ${premiumEasing} forwards`,
           opacity: 0,
-          transform: "scale(0.96)",
-          "@keyframes cardEntrance": {
+          transform: "translateY(20px)",
+          "@keyframes cardFloatIn": {
             "0%": {
               opacity: 0,
-              transform: "scale(0.96) translateY(24px)"
+              transform: "translateY(20px)"
             },
             "100%": {
               opacity: 1,
-              transform: "scale(1) translateY(0)"
+              transform: "translateY(0)"
             }
           }
         }}
@@ -189,53 +135,22 @@ export const Login = () => {
           sx={{
             position: "relative",
             p: { xs: 4.5, sm: 5.5 },
-            borderRadius: 4,
-            // Enhanced glassmorphism with inner shadow and gradient overlay
+            borderRadius: 5,
+            // Subtle glassmorphism
             background: `
-              linear-gradient(135deg, rgba(15, 23, 42, 0.78) 0%, rgba(30, 41, 59, 0.68) 100%),
-              linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
-              linear-gradient(225deg, rgba(56, 189, 248, 0.06) 0%, transparent 50%)
+              linear-gradient(135deg, rgba(15, 23, 42, 0.7) 0%, rgba(30, 41, 59, 0.6) 100%)
             `,
-            backdropFilter: "blur(32px) saturate(180%)",
+            backdropFilter: "blur(24px) saturate(160%)",
             border: "1px solid",
-            borderColor: "rgba(148, 163, 184, 0.18)",
+            borderColor: "rgba(148, 163, 184, 0.12)",
             boxShadow: `
-              0 12px 40px rgba(0, 0, 0, 0.45),
-              0 0 0 1px rgba(255, 255, 255, 0.04) inset,
-              inset 0 1px 2px rgba(255, 255, 255, 0.06),
-              inset 0 -1px 1px rgba(0, 0, 0, 0.2),
-              0 0 80px rgba(99, 102, 241, 0.12)
-            `,
-            // Inner gradient overlay (top-left lighter, bottom-right darker)
-            "&::before": {
-              content: '""',
-              position: "absolute",
-              inset: 0,
-              borderRadius: "inherit",
-              background: `
-                linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, transparent 40%),
-                linear-gradient(225deg, transparent 60%, rgba(0, 0, 0, 0.15) 100%)
-              `,
-              pointerEvents: "none",
-              opacity: 0.7
-            },
-            // Inner glow border
-            "&::after": {
-              content: '""',
-              position: "absolute",
-              inset: 0,
-              borderRadius: "inherit",
-              padding: "1px",
-              background: "linear-gradient(135deg, rgba(74, 222, 128, 0.15), rgba(99, 102, 241, 0.15), transparent)",
-              WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
-              WebkitMaskComposite: "xor",
-              maskComposite: "exclude",
-              pointerEvents: "none",
-              opacity: 0.5
-            }
+              0 20px 60px rgba(0, 0, 0, 0.4),
+              0 0 0 1px rgba(255, 255, 255, 0.03) inset,
+              0 0 40px rgba(20, 184, 166, 0.08)
+            `
           }}
         >
-          {/* Branding section with staggered animations */}
+          {/* Branding section */}
           <Box
             sx={{
               mb: 4.5,
@@ -243,78 +158,39 @@ export const Login = () => {
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: 2.25
+              gap: 2
             }}
           >
+            {/* Logo - small, confident */}
             <Box
               component="img"
               src="/spaceflow-logo.jpg"
               alt="SpaceFlow logo"
               sx={{
-                height: 56,
+                height: 40,
                 width: "auto",
-                display: "block",
-                animation: `fadeInUp 0.8s ${premiumEasing} 0.2s forwards`,
-                opacity: 0,
-                transform: "translateY(12px)",
-                "@keyframes fadeInUp": {
-                  "0%": {
-                    opacity: 0,
-                    transform: "translateY(12px)"
-                  },
-                  "100%": {
-                    opacity: 1,
-                    transform: "translateY(0)"
-                  }
-                }
+                display: "block"
               }}
             />
+            {/* Product name */}
             <Typography
               variant="h3"
               component="h1"
               sx={{
-                fontWeight: 700,
-                letterSpacing: "-0.03em",
-                background: "linear-gradient(135deg, #F9FAFB 0%, #E5E7EB 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-                animation: `fadeInUp 0.8s ${premiumEasing} 0.3s forwards`,
-                opacity: 0,
-                transform: "translateY(12px)",
-                "@keyframes fadeInUp": {
-                  "0%": {
-                    opacity: 0,
-                    transform: "translateY(12px)"
-                  },
-                  "100%": {
-                    opacity: 1,
-                    transform: "translateY(0)"
-                  }
-                }
+                fontWeight: 600,
+                letterSpacing: "-0.02em",
+                color: "rgba(255, 255, 255, 0.95)"
               }}
             >
               SpaceFlow
             </Typography>
+            {/* Tagline */}
             <Typography
               variant="body1"
               sx={{
-                color: "text.secondary",
-                fontSize: "0.95rem",
-                letterSpacing: "0.02em",
-                animation: `fadeInUp 0.8s ${premiumEasing} 0.4s forwards`,
-                opacity: 0,
-                transform: "translateY(12px)",
-                "@keyframes fadeInUp": {
-                  "0%": {
-                    opacity: 0,
-                    transform: "translateY(12px)"
-                  },
-                  "100%": {
-                    opacity: 0.75,
-                    transform: "translateY(0)"
-                  }
-                }
+                color: "rgba(148, 163, 184, 0.7)",
+                fontSize: "0.9375rem",
+                letterSpacing: "0.01em"
               }}
             >
               AI-powered workspace intelligence
@@ -328,132 +204,84 @@ export const Login = () => {
             sx={{
               display: "flex",
               flexDirection: "column",
-              gap: 3.5,
-              animation: `fadeInUp 0.8s ${premiumEasing} 0.5s forwards`,
-              opacity: 0,
-              transform: "translateY(12px)",
-              "@keyframes fadeInUp": {
-                "0%": {
-                  opacity: 0,
-                  transform: "translateY(12px)"
-                },
-                "100%": {
-                  opacity: 1,
-                  transform: "translateY(0)"
-                }
-              }
+              gap: 3
             }}
           >
-            <Box sx={{ position: "relative" }}>
-              <TextField
-                fullWidth
-                type="email"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  setError("");
-                }}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
-                error={!!error}
-                helperText={error}
-                autoFocus
-                autoComplete="email"
-                placeholder="Enter your email"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <EmailIcon
-                        sx={{
-                          color: isFocused ? "primary.main" : "text.secondary",
-                          transition: `all 0.25s ${premiumEasing}`,
-                          transform: isFocused ? "scale(1.1)" : "scale(1)",
-                          filter: isFocused ? "brightness(1.2)" : "brightness(1)"
-                        }}
-                      />
-                    </InputAdornment>
-                  )
-                }}
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: 2,
-                    bgcolor: "rgba(255, 255, 255, 0.02)",
-                    border: "1px solid",
+            <TextField
+              fullWidth
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              autoFocus
+              autoComplete="email"
+              placeholder="Enter your work email"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <EmailIcon
+                      sx={{
+                        color: isFocused ? "rgba(20, 184, 166, 0.8)" : "rgba(148, 163, 184, 0.5)",
+                        transition: `all 0.2s ${premiumEasing}`
+                      }}
+                    />
+                  </InputAdornment>
+                )
+              }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 2.5,
+                  bgcolor: "rgba(255, 255, 255, 0.03)",
+                  border: "1px solid",
+                  borderColor: isFocused
+                    ? "rgba(20, 184, 166, 0.3)"
+                    : "rgba(148, 163, 184, 0.12)",
+                  transition: `all 0.2s ${premiumEasing}`,
+                  "&:hover": {
                     borderColor: isFocused
-                      ? "rgba(74, 222, 128, 0.6)"
-                      : "rgba(148, 163, 184, 0.12)",
-                    transition: `all 0.25s ${premiumEasing}`,
-                    "&:hover": {
-                      borderColor: isFocused
-                        ? "rgba(74, 222, 128, 0.6)"
-                        : "rgba(148, 163, 184, 0.25)",
-                      bgcolor: "rgba(255, 255, 255, 0.03)"
-                    },
-                    "&.Mui-focused": {
-                      borderColor: "primary.main",
-                      bgcolor: "rgba(255, 255, 255, 0.03)",
-                      boxShadow: `
-                        0 0 0 4px rgba(74, 222, 128, 0.18),
-                        0 0 24px rgba(74, 222, 128, 0.25),
-                        0 4px 12px rgba(0, 0, 0, 0.15)
-                      `
-                    },
-                    "& fieldset": {
-                      border: "none"
-                    }
+                      ? "rgba(20, 184, 166, 0.3)"
+                      : "rgba(148, 163, 184, 0.18)",
+                    bgcolor: "rgba(255, 255, 255, 0.04)"
                   },
-                  "& .MuiInputBase-input": {
-                    py: 1.875,
-                    fontSize: "1rem",
-                    color: "text.primary",
-                    transition: `all 0.25s ${premiumEasing}`,
-                    "&::placeholder": {
-                      color: "text.secondary",
-                      opacity: hasValue ? 0 : 0.55,
-                      transition: `opacity 0.25s ${premiumEasing}`
-                    }
-                  },
-                  "& .MuiFormHelperText-root": {
-                    mx: 0,
-                    mt: 1.25,
-                    fontSize: "0.8125rem",
-                    opacity: 0.8
-                  }
-                }}
-              />
-              {/* Floating label effect */}
-              {hasValue && (
-                <Typography
-                  variant="caption"
-                  sx={{
-                    position: "absolute",
-                    top: -8,
-                    left: 12,
-                    fontSize: "0.6875rem",
-                    color: isFocused ? "primary.main" : "text.secondary",
-                    opacity: isFocused ? 0.9 : 0.65,
-                    fontWeight: 500,
-                    letterSpacing: "0.05em",
-                    textTransform: "uppercase",
-                    pointerEvents: "none",
-                    transition: `all 0.25s ${premiumEasing}`,
-                    animation: `fadeInUp 0.25s ${premiumEasing} forwards`,
-                    "@keyframes fadeInUp": {
-                      "0%": {
-                        opacity: 0,
-                        transform: "translateY(4px)"
+                  "&.Mui-focused": {
+                    borderColor: "rgba(20, 184, 166, 0.4)",
+                    bgcolor: "rgba(255, 255, 255, 0.04)",
+                    boxShadow: `
+                      0 0 0 2px rgba(20, 184, 166, 0.1),
+                      0 0 16px rgba(20, 184, 166, 0.15)
+                    `,
+                    animation: "pulseGlow 3s ease-in-out infinite",
+                    "@keyframes pulseGlow": {
+                      "0%, 100%": {
+                        boxShadow: `
+                          0 0 0 2px rgba(20, 184, 166, 0.1),
+                          0 0 16px rgba(20, 184, 166, 0.15)
+                        `
                       },
-                      "100%": {
-                        opacity: isFocused ? 0.9 : 0.65,
-                        transform: "translateY(0)"
+                      "50%": {
+                        boxShadow: `
+                          0 0 0 2px rgba(20, 184, 166, 0.15),
+                          0 0 20px rgba(20, 184, 166, 0.2)
+                        `
                       }
                     }
-                  }}
-                >
-                  Email
-                </Typography>
-              )}
-            </Box>
+                  },
+                  "& fieldset": {
+                    border: "none"
+                  }
+                },
+                "& .MuiInputBase-input": {
+                  py: 2,
+                  fontSize: "1rem",
+                  color: "rgba(255, 255, 255, 0.95)",
+                  "&::placeholder": {
+                    color: "rgba(148, 163, 184, 0.5)",
+                    opacity: 1
+                  }
+                }
+              }}
+            />
 
             {/* Primary CTA button */}
             <Button
@@ -462,46 +290,30 @@ export const Login = () => {
               variant="contained"
               disabled={!isValidEmail || !email.trim()}
               sx={{
-                py: 1.875,
+                py: 1.75,
                 borderRadius: 999,
                 fontSize: "1rem",
                 fontWeight: 600,
-                letterSpacing: "0.03em",
+                letterSpacing: "0.02em",
                 background: isValidEmail && email.trim()
-                  ? "linear-gradient(135deg, #22C55E 0%, #4ADE80 50%, #06B6D4 100%)"
-                  : "linear-gradient(135deg, rgba(34, 197, 94, 0.25) 0%, rgba(74, 222, 128, 0.25) 50%, rgba(6, 182, 212, 0.25) 100%)",
-                color: isValidEmail && email.trim() ? "#020617" : "text.disabled",
+                  ? "linear-gradient(135deg, #22C55E 0%, #14B8A6 100%)"
+                  : "linear-gradient(135deg, rgba(34, 197, 94, 0.3) 0%, rgba(20, 184, 166, 0.3) 100%)",
+                color: isValidEmail && email.trim() ? "#020617" : "rgba(148, 163, 184, 0.5)",
                 boxShadow: isValidEmail && email.trim()
-                  ? "0 0 0 1px rgba(74, 222, 128, 0.5), 0 8px 24px rgba(34, 197, 94, 0.35), 0 0 40px rgba(74, 222, 128, 0.15)"
+                  ? "0 0 0 1px rgba(20, 184, 166, 0.4), 0 8px 24px rgba(34, 197, 94, 0.3), 0 0 40px rgba(20, 184, 166, 0.15)"
                   : "none",
-                transition: `all 0.3s ${premiumEasing}`,
-                position: "relative",
-                overflow: "hidden",
-                // Gradient shine effect
-                "&::before": {
-                  content: '""',
-                  position: "absolute",
-                  inset: 0,
-                  background: "linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, transparent 50%, transparent 100%)",
-                  opacity: 0,
-                  transition: `opacity 0.4s ${premiumEasing}, transform 0.6s ${premiumEasing}`,
-                  transform: "translateX(-100%)"
-                },
+                transition: `all 0.2s ${premiumEasing}`,
                 "&:hover:not(:disabled)": {
-                  transform: "translateY(-1.5px)",
+                  transform: "translateY(-1px)",
+                  background: "linear-gradient(135deg, #22C55E 0%, #14B8A6 100%)",
                   boxShadow: `
-                    0 0 0 1px rgba(74, 222, 128, 0.65),
-                    0 12px 36px rgba(34, 197, 94, 0.45),
-                    0 0 60px rgba(74, 222, 128, 0.25)
-                  `,
-                  "&::before": {
-                    opacity: 1,
-                    transform: "translateX(100%)"
-                  }
+                    0 0 0 1px rgba(20, 184, 166, 0.5),
+                    0 12px 32px rgba(34, 197, 94, 0.4),
+                    0 0 50px rgba(20, 184, 166, 0.2)
+                  `
                 },
                 "&:active:not(:disabled)": {
-                  transform: "translateY(0px) scale(0.97)",
-                  transition: `transform 0.12s ${premiumEasing}`
+                  transform: "translateY(0px)"
                 },
                 "&:disabled": {
                   cursor: "not-allowed",
@@ -513,47 +325,32 @@ export const Login = () => {
             </Button>
           </Box>
 
-          {/* Footer context */}
+          {/* Footer helper text */}
           <Box
             sx={{
-              mt: 4.5,
-              pt: 3.5,
-              borderTop: "1px solid",
-              borderColor: "rgba(148, 163, 184, 0.08)",
-              textAlign: "center",
-              animation: `fadeIn 0.8s ${premiumEasing} 0.7s forwards`,
-              opacity: 0,
-              "@keyframes fadeIn": {
-                "0%": {
-                  opacity: 0
-                },
-                "100%": {
-                  opacity: 1
-                }
-              }
+              mt: 4,
+              textAlign: "center"
             }}
           >
             <Typography
               variant="caption"
               sx={{
                 display: "block",
-                color: "text.secondary",
+                color: "rgba(148, 163, 184, 0.6)",
                 fontSize: "0.75rem",
-                mb: 0.75,
-                letterSpacing: "0.05em",
-                opacity: 0.7
+                mb: 0.5,
+                letterSpacing: "0.01em"
               }}
             >
-              Workspace Admin • Demo Environment
+              Workspace Admin · Demo Environment
             </Typography>
             <Typography
               variant="caption"
               sx={{
                 display: "block",
-                color: "text.secondary",
+                color: "rgba(148, 163, 184, 0.5)",
                 fontSize: "0.6875rem",
-                opacity: 0.6,
-                letterSpacing: "0.03em"
+                letterSpacing: "0.01em"
               }}
             >
               No password required
