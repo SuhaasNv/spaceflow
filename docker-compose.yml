@@ -28,3 +28,10 @@ services:
       context: ./services/analytics-service
     ports:
       - "8083:8080"
+
+  ai-engine:
+    container_name: spaceflow-ai-engine
+    build:
+      context: ./services/ai-engine
+    ports:
+      - "8084:8080"
