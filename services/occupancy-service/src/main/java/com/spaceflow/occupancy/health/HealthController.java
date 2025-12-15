@@ -1,4 +1,4 @@
-package com.spaceflow.booking.health;
+package com.spaceflow.occupancy.health;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,8 +16,5 @@ public class HealthController {
         return ResponseEntity.ok(Map.of("status", "UP"));
     }
 }
-
-
-
 
 

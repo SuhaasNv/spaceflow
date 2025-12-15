@@ -1,6 +1,7 @@
-package com.spaceflow.booking.dto;
+package com.spaceflow.occupancy.dto;
 
 public class ErrorResponse {
+
     private String error;
     private String message;
 
@@ -28,8 +29,5 @@ public class ErrorResponse {
         this.message = message;
     }
 }
-
-
-
 
 
