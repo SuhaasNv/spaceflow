@@ -1,0 +1,226 @@
+openapi: 3.0.0
+info:
+  title: Occupancy Service API
+  description: API for recording and retrieving observed space usage in the SpaceFlow platform
+  version: 1.0.0
+servers:
+  - url: /api/v1
+    description: Occupancy Service API v1
+
+paths:
+  /occupancy/observations:
+    post:
+      summary: Record an occupancy observation
+      description: Records an observation of actual space usage for a specific space and time window. Observations are accepted even if they arrive late, are incomplete, or appear inconsistent with other data.
+      operationId: recordObservation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ObservationCreateRequest'
+      responses:
+        '201':
+          description: Observation recorded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Observation'
+        '400':
+          description: Invalid observation payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      summary: Retrieve occupancy observations
+      description: Retrieves occupancy observations for a specific space and time window. Returned data reflects only what has been recorded and may be delayed, incomplete, or contain overlapping observations.
+      operationId: getObservations
+      parameters:
+        - name: spaceId
+          in: query
+          description: Identifier of the space to retrieve observations for
+          required: true
+          schema:
+            type: string
+        - name: startTime
+          in: query
+          description: Start of the time window to query (ISO 8601, inclusive)
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: endTime
+          in: query
+          description: End of the time window to query (ISO 8601, exclusive)
+          required: true
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Observations retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  observations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Observation'
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /occupancy/observations/{observationId}:
+    patch:
+      summary: Update or correct an occupancy observation
+      description: Updates an existing occupancy observation when more accurate information becomes available. Corrections do not remove other observations and may coexist with overlapping data.
+      operationId: updateObservation
+      parameters:
+        - name: observationId
+          in: path
+          required: true
+          description: Identifier of the observation to update
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ObservationUpdateRequest'
+      responses:
+        '200':
+          description: Observation updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Observation'
+        '400':
+          description: Invalid update payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Observation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    Observation:
+      type: object
+      required:
+        - observationId
+        - spaceId
+        - observedStartTime
+        - observedEndTime
+        - occupancyStatus
+        - recordedAt
+      properties:
+        observationId:
+          type: string
+          description: Unique identifier for the observation
+        spaceId:
+          type: string
+          description: Identifier of the observed space
+        observedStartTime:
+          type: string
+          format: date-time
+          description: Start of the period during which occupancy was observed
+        observedEndTime:
+          type: string
+          format: date-time
+          description: End of the period during which occupancy was observed
+        occupancyStatus:
+          type: string
+          description: Recorded occupancy state during the observed period
+          enum:
+            - occupied
+            - unoccupied
+        notes:
+          type: string
+          description: Optional free-form notes about the observation
+        recordedAt:
+          type: string
+          format: date-time
+          description: Time at which this observation was recorded by the service
+        updatedAt:
+          type: string
+          format: date-time
+          description: Time at which this observation was last updated
+
+    ObservationCreateRequest:
+      type: object
+      required:
+        - spaceId
+        - observedStartTime
+        - observedEndTime
+        - occupancyStatus
+      properties:
+        spaceId:
+          type: string
+          description: Identifier of the space being observed
+        observedStartTime:
+          type: string
+          format: date-time
+          description: Start of the observed occupancy period
+        observedEndTime:
+          type: string
+          format: date-time
+          description: End of the observed occupancy period
+        occupancyStatus:
+          type: string
+          description: Recorded occupancy state during the observed period
+          enum:
+            - occupied
+            - unoccupied
+        notes:
+          type: string
+          description: Optional free-form notes about the observation
+
+    ObservationUpdateRequest:
+      type: object
+      description: Fields that may be updated for an existing observation
+      properties:
+        observedStartTime:
+          type: string
+          format: date-time
+          description: Corrected start of the observed occupancy period
+        observedEndTime:
+          type: string
+          format: date-time
+          description: Corrected end of the observed occupancy period
+        occupancyStatus:
+          type: string
+          description: Corrected occupancy state during the observed period
+          enum:
+            - occupied
+            - unoccupied
+        notes:
+          type: string
+          description: Updated notes about the observation
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error code or type
+        message:
+          type: string
+          description: Human-readable error message
+
+
