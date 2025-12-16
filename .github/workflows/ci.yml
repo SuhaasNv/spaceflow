@@ -80,57 +80,44 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build frontend image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./frontend
-          file: ./frontend/Dockerfile
-          push: false
-          tags: spaceflow-frontend:ci
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+        run: |
+          docker build \
+            -t spaceflow-frontend:ci \
+            -f frontend/Dockerfile \
+            frontend/
 
       - name: Build auth-service image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./services/auth-service
-          push: false
-          tags: spaceflow-auth-service:ci
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+        run: |
+          docker build \
+            -t spaceflow-auth-service:ci \
+            -f services/auth-service/Dockerfile \
+            services/auth-service/
 
       - name: Build booking-service image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./services/booking-service
-          push: false
-          tags: spaceflow-booking-service:ci
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+        run: |
+          docker build \
+            -t spaceflow-booking-service:ci \
+            -f services/booking-service/Dockerfile \
+            services/booking-service/
 
       - name: Build occupancy-service image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./services/occupancy-service
-          push: false
-          tags: spaceflow-occupancy-service:ci
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+        run: |
+          docker build \
+            -t spaceflow-occupancy-service:ci \
+            -f services/occupancy-service/Dockerfile \
+            services/occupancy-service/
 
       - name: Build analytics-service image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./services/analytics-service
-          push: false
-          tags: spaceflow-analytics-service:ci
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+        run: |
+          docker build \
+            -t spaceflow-analytics-service:ci \
+            -f services/analytics-service/Dockerfile \
+            services/analytics-service/
 
       - name: Build ai-engine image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./services/ai-engine
-          push: false
-          tags: spaceflow-ai-engine:ci
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+        run: |
+          docker build \
+            -t spaceflow-ai-engine:ci \
+            -f services/ai-engine/Dockerfile \
+            services/ai-engine/
 
