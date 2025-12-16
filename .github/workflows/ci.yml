@@ -84,40 +84,40 @@ jobs:
           docker build \
             -t spaceflow-frontend:ci \
             -f frontend/Dockerfile \
-            frontend/
+            frontend
 
       - name: Build auth-service image
         run: |
           docker build \
             -t spaceflow-auth-service:ci \
             -f services/auth-service/Dockerfile \
-            services/auth-service/
+            services/auth-service
 
       - name: Build booking-service image
         run: |
           docker build \
             -t spaceflow-booking-service:ci \
             -f services/booking-service/Dockerfile \
-            services/booking-service/
+            services/booking-service
 
       - name: Build occupancy-service image
         run: |
           docker build \
             -t spaceflow-occupancy-service:ci \
             -f services/occupancy-service/Dockerfile \
-            services/occupancy-service/
+            services/occupancy-service
 
       - name: Build analytics-service image
         run: |
           docker build \
             -t spaceflow-analytics-service:ci \
             -f services/analytics-service/Dockerfile \
-            services/analytics-service/
+            services/analytics-service
 
       - name: Build ai-engine image
         run: |
           docker build \
             -t spaceflow-ai-engine:ci \
             -f services/ai-engine/Dockerfile \
-            services/ai-engine/
+            services/ai-engine
 
