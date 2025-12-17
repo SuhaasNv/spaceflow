@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.spaceflow.aiengine.api.RecommendationsControllerTest
 -------------------------------------------------------------------------------
-Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.346 s - in com.spaceflow.aiengine.api.RecommendationsControllerTest
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.593 s - in com.spaceflow.aiengine.api.RecommendationsControllerTest

@@ -1,9 +1,9 @@
 package com.spaceflow.aiengine.api;
 
 import com.spaceflow.aiengine.dto.ContextScope;
-import com.spaceflow.aiengine.dto.Recommendation;
 import com.spaceflow.aiengine.dto.RecommendationsResponse;
 import com.spaceflow.aiengine.dto.TimeRange;
+import com.spaceflow.aiengine.service.HeuristicRecommendationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,12 +13,17 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
-import java.util.Collections;
 
 @RestController
 @RequestMapping("/api/v1")
 @Validated
 public class RecommendationsController {
+
+    private final HeuristicRecommendationService recommendationService;
+
+    public RecommendationsController(HeuristicRecommendationService recommendationService) {
+        this.recommendationService = recommendationService;
+    }
 
     @GetMapping("/recommendations")
     public ResponseEntity<RecommendationsResponse> getRecommendations(
@@ -28,15 +33,24 @@ public class RecommendationsController {
             @RequestParam(name = "focus", required = false) String focus,
             @RequestParam(name = "limit", required = false) Integer limit
     ) {
-        // TODO: Implement retrieval of advisory recommendations from AI Engine logic.
-        // This implementation must remain read-only and advisory.
+        ContextScope contextScope = parseScope(scope);
+        TimeRange timeRange = buildTimeRange(timeRangeStart, timeRangeEnd);
 
-        RecommendationsResponse response = new RecommendationsResponse();
+        RecommendationsResponse response = recommendationService.generateRecommendations(
+                contextScope,
+                timeRange,
+                focus,
+                limit
+        );
 
+        return ResponseEntity.ok(response);
+    }
+
+    private ContextScope parseScope(String scope) {
         ContextScope contextScope = new ContextScope();
-        // Basic parsing of scope into type:id for the stub implementation.
-        // TODO: Replace with real scope parsing/validation once the domain model is defined.
-        if (scope.contains(":")) {
+        // Basic parsing of scope into type:id.
+        // This keeps the logic deterministic and explainable.
+        if (scope != null && scope.contains(":")) {
             String[] parts = scope.split(":", 2);
             contextScope.setType(parts[0]);
             contextScope.setId(parts[1]);
@@ -44,22 +58,19 @@ public class RecommendationsController {
             contextScope.setType("unknown");
             contextScope.setId(scope);
         }
-        response.setScope(contextScope);
+        return contextScope;
+    }
 
+    private TimeRange buildTimeRange(String start, String end) {
         TimeRange timeRange = new TimeRange();
-        timeRange.setStart(timeRangeStart);
-        timeRange.setEnd(timeRangeEnd);
+        timeRange.setStart(start);
+        timeRange.setEnd(end);
 
-        // Optionally validate the date-time format in a lenient way for the stub.
-        // Real validation rules should be added later alongside business logic.
-        validateOptionalDateTime(timeRangeStart);
-        validateOptionalDateTime(timeRangeEnd);
+        // Lenient validation only; errors are intentionally ignored to keep this advisory.
+        validateOptionalDateTime(start);
+        validateOptionalDateTime(end);
 
-        response.setTimeRange(timeRange);
-        response.setFocus(focus);
-        response.setRecommendations(Collections.<Recommendation>emptyList());
-
-        return ResponseEntity.ok(response);
+        return timeRange;
     }
 
     private void validateOptionalDateTime(String value) {

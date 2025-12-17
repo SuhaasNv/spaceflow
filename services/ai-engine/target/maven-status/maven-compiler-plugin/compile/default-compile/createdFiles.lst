@@ -1,10 +1,10 @@
 com\spaceflow\aiengine\AiEngineApplication.class
-com\spaceflow\aiengine\dto\RecommendationExplanation$ContributingSignal.class
-com\spaceflow\aiengine\api\ExplanationsController.class
 com\spaceflow\aiengine\dto\TimeRange.class
 com\spaceflow\aiengine\dto\RecommendationExplanation.class
-com\spaceflow\aiengine\health\HealthController.class
 com\spaceflow\aiengine\dto\ContextScope.class
+com\spaceflow\aiengine\dto\RecommendationExplanation$ContributingSignal.class
+com\spaceflow\aiengine\api\ExplanationsController.class
+com\spaceflow\aiengine\health\HealthController.class
 com\spaceflow\aiengine\api\RecommendationsController.class
 com\spaceflow\aiengine\dto\ErrorResponse.class
 com\spaceflow\aiengine\dto\RecommendationsResponse.class
