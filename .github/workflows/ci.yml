@@ -57,10 +57,14 @@ jobs:
         working-directory: services/${{ matrix.service }}
         run: mvn clean test
 
-  docker-build:
-    name: Docker Build
+  docker-tags:
+    name: Compute Docker Tags
     runs-on: ubuntu-latest
     needs: [lint, test]
+    outputs:
+      image_tag: ${{ steps.tags.outputs.image_tag }}
+      commit_sha: ${{ steps.tags.outputs.commit_sha }}
+      branch_name: ${{ steps.tags.outputs.branch_name }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -118,87 +122,88 @@ jobs:
           echo "   Branch: ${SANITIZED_BRANCH}"
           echo "   Image tag: ${IMAGE_TAG}"
 
-      - name: Verify Dockerfiles exist
-        run: |
-          echo "Verifying all Dockerfiles exist..."
-          test -f frontend/Dockerfile || (echo "ERROR: frontend/Dockerfile not found" && exit 1)
-          test -f services/auth-service/Dockerfile || (echo "ERROR: services/auth-service/Dockerfile not found" && exit 1)
-          test -f services/booking-service/Dockerfile || (echo "ERROR: services/booking-service/Dockerfile not found" && exit 1)
-          test -f services/occupancy-service/Dockerfile || (echo "ERROR: services/occupancy-service/Dockerfile not found" && exit 1)
-          test -f services/analytics-service/Dockerfile || (echo "ERROR: services/analytics-service/Dockerfile not found" && exit 1)
-          test -f services/ai-engine/Dockerfile || (echo "ERROR: services/ai-engine/Dockerfile not found" && exit 1)
-          echo "All Dockerfiles verified ✓"
+  docker-build:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: docker-tags
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - service: frontend
+            image: spaceflow-frontend
+            dockerfile: frontend/Dockerfile
+            context: frontend
+          - service: auth-service
+            image: spaceflow-auth-service
+            dockerfile: services/auth-service/Dockerfile
+            context: services/auth-service
+          - service: booking-service
+            image: spaceflow-booking-service
+            dockerfile: services/booking-service/Dockerfile
+            context: services/booking-service
+          - service: occupancy-service
+            image: spaceflow-occupancy-service
+            dockerfile: services/occupancy-service/Dockerfile
+            context: services/occupancy-service
+          - service: analytics-service
+            image: spaceflow-analytics-service
+            dockerfile: services/analytics-service/Dockerfile
+            context: services/analytics-service
+          - service: ai-engine
+            image: spaceflow-ai-engine
+            dockerfile: services/ai-engine/Dockerfile
+            context: services/ai-engine
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Build frontend image
+      - name: Verify Dockerfile exists
         run: |
-          IMAGE_TAG="spaceflow-frontend:${{ steps.tags.outputs.image_tag }}"
+          if [ ! -f "${{ matrix.dockerfile }}" ]; then
+            echo "ERROR: ${{ matrix.dockerfile }} not found"
+            exit 1
+          fi
+          echo "✓ Dockerfile verified: ${{ matrix.dockerfile }}"
+
+      - name: Build Docker image
+        run: |
+          IMAGE_TAG="${{ matrix.image }}:${{ needs.docker-tags.outputs.image_tag }}"
           echo "🔨 Building: ${IMAGE_TAG}"
+          echo "   Service: ${{ matrix.service }}"
+          echo "   Dockerfile: ${{ matrix.dockerfile }}"
+          echo "   Context: ${{ matrix.context }}"
+          
           docker build \
             -t "${IMAGE_TAG}" \
-            -f frontend/Dockerfile \
-            frontend
+            -f "${{ matrix.dockerfile }}" \
+            "${{ matrix.context }}"
+          
           echo "✅ Built: ${IMAGE_TAG}"
 
-      - name: Build auth-service image
+      - name: Summary
         run: |
-          IMAGE_TAG="spaceflow-auth-service:${{ steps.tags.outputs.image_tag }}"
-          echo "🔨 Building: ${IMAGE_TAG}"
-          docker build \
-            -t "${IMAGE_TAG}" \
-            -f services/auth-service/Dockerfile \
-            services/auth-service
-          echo "✅ Built: ${IMAGE_TAG}"
+          echo "📋 Service build complete:"
+          echo "   Image: ${{ matrix.image }}:${{ needs.docker-tags.outputs.image_tag }}"
 
-      - name: Build booking-service image
+  docker-build-summary:
+    name: Docker Build Summary
+    runs-on: ubuntu-latest
+    needs: [docker-tags, docker-build]
+    if: always()
+    steps:
+      - name: Summary of all built images
         run: |
-          IMAGE_TAG="spaceflow-booking-service:${{ steps.tags.outputs.image_tag }}"
-          echo "🔨 Building: ${IMAGE_TAG}"
-          docker build \
-            -t "${IMAGE_TAG}" \
-            -f services/booking-service/Dockerfile \
-            services/booking-service
-          echo "✅ Built: ${IMAGE_TAG}"
-
-      - name: Build occupancy-service image
-        run: |
-          IMAGE_TAG="spaceflow-occupancy-service:${{ steps.tags.outputs.image_tag }}"
-          echo "🔨 Building: ${IMAGE_TAG}"
-          docker build \
-            -t "${IMAGE_TAG}" \
-            -f services/occupancy-service/Dockerfile \
-            services/occupancy-service
-          echo "✅ Built: ${IMAGE_TAG}"
-
-      - name: Build analytics-service image
-        run: |
-          IMAGE_TAG="spaceflow-analytics-service:${{ steps.tags.outputs.image_tag }}"
-          echo "🔨 Building: ${IMAGE_TAG}"
-          docker build \
-            -t "${IMAGE_TAG}" \
-            -f services/analytics-service/Dockerfile \
-            services/analytics-service
-          echo "✅ Built: ${IMAGE_TAG}"
-
-      - name: Build ai-engine image
-        run: |
-          IMAGE_TAG="spaceflow-ai-engine:${{ steps.tags.outputs.image_tag }}"
-          echo "🔨 Building: ${IMAGE_TAG}"
-          docker build \
-            -t "${IMAGE_TAG}" \
-            -f services/ai-engine/Dockerfile \
-            services/ai-engine
-          echo "✅ Built: ${IMAGE_TAG}"
-
-      - name: Summary of built images
-        run: |
-          echo "📋 Summary of built Docker images:"
-          echo "   Tag pattern: ${{ steps.tags.outputs.image_tag }}"
+          echo "📋 Summary of all Docker images built:"
+          echo "   Tag pattern: ${{ needs.docker-tags.outputs.image_tag }}"
+          echo "   Commit SHA: ${{ needs.docker-tags.outputs.commit_sha }}"
+          echo "   Branch: ${{ needs.docker-tags.outputs.branch_name }}"
           echo ""
           echo "   Images built:"
-          echo "   - spaceflow-frontend:${{ steps.tags.outputs.image_tag }}"
-          echo "   - spaceflow-auth-service:${{ steps.tags.outputs.image_tag }}"
-          echo "   - spaceflow-booking-service:${{ steps.tags.outputs.image_tag }}"
-          echo "   - spaceflow-occupancy-service:${{ steps.tags.outputs.image_tag }}"
-          echo "   - spaceflow-analytics-service:${{ steps.tags.outputs.image_tag }}"
-          echo "   - spaceflow-ai-engine:${{ steps.tags.outputs.image_tag }}"
+          echo "   - spaceflow-frontend:${{ needs.docker-tags.outputs.image_tag }}"
+          echo "   - spaceflow-auth-service:${{ needs.docker-tags.outputs.image_tag }}"
+          echo "   - spaceflow-booking-service:${{ needs.docker-tags.outputs.image_tag }}"
+          echo "   - spaceflow-occupancy-service:${{ needs.docker-tags.outputs.image_tag }}"
+          echo "   - spaceflow-analytics-service:${{ needs.docker-tags.outputs.image_tag }}"
+          echo "   - spaceflow-ai-engine:${{ needs.docker-tags.outputs.image_tag }}"
 
