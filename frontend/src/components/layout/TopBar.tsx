@@ -13,7 +13,7 @@ import {
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
 import LogoutIcon from "@mui/icons-material/Logout";
-import { useAuth } from "../../auth/useAuth";
+import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 type TopBarProps = {
@@ -35,17 +35,17 @@ export const TopBar = ({ onMenuClick, isSidebarOpen }: TopBarProps) => {
     setAnchorEl(null);
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate("/", { replace: true });
     handleClose();
   };
 
-  // Get user initials from email (first letter of local part and domain)
-  const getInitials = (email: string) => {
-    const localPart = email.split("@")[0];
-    const domainPart = email.split("@")[1]?.[0] || "";
-    return (localPart[0]?.toUpperCase() || "") + (domainPart.toUpperCase() || "").slice(0, 1);
+  const getInitials = () => {
+    if (!user) {
+      return "";
+    }
+    return user.id.charAt(0).toUpperCase();
   };
 
   if (!user) {
@@ -210,7 +210,7 @@ export const TopBar = ({ onMenuClick, isSidebarOpen }: TopBarProps) => {
               }
             })}
           >
-            <Avatar
+              <Avatar
               sx={{
                 width: 36,
                 height: 36,
@@ -219,8 +219,8 @@ export const TopBar = ({ onMenuClick, isSidebarOpen }: TopBarProps) => {
                 color: "primary.contrastText",
                 flexShrink: 0
               }}
-            >
-              {getInitials(user.email)}
+              >
+                {getInitials()}
             </Avatar>
             <Box
               sx={{
@@ -243,7 +243,7 @@ export const TopBar = ({ onMenuClick, isSidebarOpen }: TopBarProps) => {
                   maxWidth: "200px"
                 }}
               >
-                {user.email}
+                {user.id}
               </Typography>
               <Typography
                 variant="caption"

@@ -1,69 +1,97 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode
+} from "react";
+import {
+  login as apiLogin,
+  logout as apiLogout,
+  validateSession,
+  AuthUser
+} from "../api/authApi";
 
 export interface User {
-  email: string;
-  name: string;
+  id: string;
   role: string;
-  workspace: string;
 }
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string) => void;
-  logout: () => void;
-  isLoading: boolean;
+  isAuthenticated: boolean;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const STORAGE_KEY = "spaceflow_user";
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
-  // Load user from localStorage on mount
   useEffect(() => {
-    const storedUser = localStorage.getItem(STORAGE_KEY);
-    if (storedUser) {
+    let isMounted = true;
+
+    const bootstrapAuth = async () => {
       try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        // Invalid stored data, clear it
-        localStorage.removeItem(STORAGE_KEY);
+        const sessionUser = await validateSession();
+        if (isMounted && sessionUser) {
+          setUser(mapAuthUser(sessionUser));
+        }
+      } catch {
+        if (isMounted) {
+          setUser(null);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
-    }
-    setIsLoading(false);
-  }, []);
-
-  const login = (email: string) => {
-    // Extract name from email (part before @)
-    const name = email.split("@")[0].split(".").map(
-      (part) => part.charAt(0).toUpperCase() + part.slice(1)
-    ).join(" ");
-
-    const newUser: User = {
-      email,
-      name,
-      role: "Workspace Admin",
-      workspace: "Acme HQ"
     };
 
-    setUser(newUser);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newUser));
+    bootstrapAuth();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleLogin = async (email: string, password: string) => {
+    const authUser = await apiLogin(email, password);
+    setUser(mapAuthUser(authUser));
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem(STORAGE_KEY);
+  const handleLogout = async () => {
+    try {
+      await apiLogout();
+    } finally {
+      setUser(null);
+    }
   };
+
+  const isAuthenticated = !!user;
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated,
+        loading,
+        login: handleLogin,
+        logout: handleLogout
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
+
+const mapAuthUser = (authUser: AuthUser): User => ({
+  id: authUser.id,
+  role: authUser.role
+});
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -72,4 +100,3 @@ export const useAuth = () => {
   }
   return context;
 };
-

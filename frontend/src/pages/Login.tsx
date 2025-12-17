@@ -10,10 +10,14 @@ import {
 import EmailIcon from "@mui/icons-material/Email";
 import HomeIcon from "@mui/icons-material/Home";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../auth/useAuth";
+import { Alert } from "@mui/material";
+import { useAuth } from "../context/AuthContext";
 
 export const Login = () => {
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [isFocused, setIsFocused] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -21,16 +25,23 @@ export const Login = () => {
   // Premium easing curve
   const premiumEasing = "cubic-bezier(0.22, 1, 0.36, 1)";
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setError(null);
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email.trim())) {
+    if (!emailRegex.test(email.trim()) || !password.trim()) {
       return;
     }
 
-    login(email);
-    navigate("/app/dashboard", { replace: true });
+    try {
+      setSubmitting(true);
+      await login(email.trim(), password);
+      navigate("/app/dashboard", { replace: true });
+    } catch (err) {
+      setError("Unable to sign in. Please check your credentials and try again.");
+      setSubmitting(false);
+    }
   };
 
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -283,12 +294,63 @@ export const Login = () => {
               }}
             />
 
+            <TextField
+              fullWidth
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              placeholder="Enter your password"
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 2.5,
+                  bgcolor: "rgba(255, 255, 255, 0.03)",
+                  border: "1px solid",
+                  borderColor: "rgba(148, 163, 184, 0.12)",
+                  "&:hover": {
+                    borderColor: "rgba(148, 163, 184, 0.18)",
+                    bgcolor: "rgba(255, 255, 255, 0.04)"
+                  },
+                  "&.Mui-focused": {
+                    borderColor: "rgba(20, 184, 166, 0.4)",
+                    bgcolor: "rgba(255, 255, 255, 0.04)"
+                  },
+                  "& fieldset": {
+                    border: "none"
+                  }
+                },
+                "& .MuiInputBase-input": {
+                  py: 2,
+                  fontSize: "1rem",
+                  color: "rgba(255, 255, 255, 0.95)",
+                  "&::placeholder": {
+                    color: "rgba(148, 163, 184, 0.5)",
+                    opacity: 1
+                  }
+                }
+              }}
+            />
+
+            {error && (
+              <Alert
+                severity="error"
+                sx={{
+                  bgcolor: "rgba(248, 113, 113, 0.12)",
+                  color: "rgba(254, 242, 242, 0.9)",
+                  borderRadius: 2,
+                  border: "1px solid rgba(239, 68, 68, 0.4)"
+                }}
+              >
+                {error}
+              </Alert>
+            )}
+
             {/* Primary CTA button */}
             <Button
               type="submit"
               fullWidth
               variant="contained"
-              disabled={!isValidEmail || !email.trim()}
+              disabled={!isValidEmail || !email.trim() || !password.trim() || submitting}
               sx={{
                 py: 1.75,
                 borderRadius: 999,
@@ -321,7 +383,7 @@ export const Login = () => {
                 }
               }}
             >
-              Enter Workspace
+              {submitting ? "Signing in..." : "Enter Workspace"}
             </Button>
           </Box>
 
@@ -332,7 +394,7 @@ export const Login = () => {
               textAlign: "center"
             }}
           >
-            <Typography
+              <Typography
               variant="caption"
               sx={{
                 display: "block",
@@ -342,7 +404,7 @@ export const Login = () => {
                 letterSpacing: "0.01em"
               }}
             >
-              Workspace Admin · Demo Environment
+              Workspace Admin
             </Typography>
             <Typography
               variant="caption"
@@ -353,7 +415,7 @@ export const Login = () => {
                 letterSpacing: "0.01em"
               }}
             >
-              No password required
+              Sign in with your SpaceFlow credentials
             </Typography>
           </Box>
         </Box>
