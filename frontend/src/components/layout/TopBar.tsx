@@ -8,13 +8,15 @@ import {
   Typography,
   Menu,
   MenuItem,
-  Divider
+  Divider,
+  Chip
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useAuthorization } from "../../auth/useAuthorization";
 
 type TopBarProps = {
   onMenuClick: () => void;
@@ -23,6 +25,7 @@ type TopBarProps = {
 
 export const TopBar = ({ onMenuClick, isSidebarOpen }: TopBarProps) => {
   const { user, logout } = useAuth();
+  const { role } = useAuthorization();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -245,20 +248,26 @@ export const TopBar = ({ onMenuClick, isSidebarOpen }: TopBarProps) => {
               >
                 {user.id}
               </Typography>
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{
-                  fontSize: "0.75rem",
-                  lineHeight: 1.2,
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  maxWidth: "200px"
-                }}
-              >
-                {user.role}
-              </Typography>
+              {role && (
+                <Chip
+                  label={role.toLowerCase().replace(/_/g, " ")}
+                  size="small"
+                  sx={{
+                    height: 20,
+                    borderRadius: 999,
+                    fontSize: "0.65rem",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.12em",
+                    bgcolor: "rgba(148, 163, 184, 0.12)",
+                    color: "text.secondary",
+                    borderColor: "rgba(148, 163, 184, 0.3)",
+                    "& .MuiChip-label": {
+                      px: 0.75
+                    }
+                  }}
+                  variant="outlined"
+                />
+              )}
             </Box>
           </Box>
           <Menu
@@ -290,9 +299,11 @@ export const TopBar = ({ onMenuClick, isSidebarOpen }: TopBarProps) => {
                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
                   {user.email}
                 </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {user.role}
-                </Typography>
+                {role && (
+                  <Typography variant="caption" color="text.secondary">
+                    {role.toLowerCase().replace(/_/g, " ")}
+                  </Typography>
+                )}
               </Box>
             </MenuItem>
             <Divider />
