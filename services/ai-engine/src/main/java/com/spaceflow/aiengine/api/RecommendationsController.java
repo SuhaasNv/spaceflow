@@ -33,8 +33,15 @@ public class RecommendationsController {
             @RequestParam(name = "focus", required = false) String focus,
             @RequestParam(name = "limit", required = false) Integer limit
     ) {
+        // TEMP DEBUG: Log method entry
+        System.out.println("[TEMP DEBUG LAYER 2] AI /recommendations hit");
+        
         ContextScope contextScope = parseScope(scope);
         TimeRange timeRange = buildTimeRange(timeRangeStart, timeRangeEnd);
+
+        // TEMP DEBUG: Log parsed scope and time range
+        System.out.println("[TEMP DEBUG LAYER 2] Parsed scope: type=" + contextScope.getType() + ", id=" + contextScope.getId());
+        System.out.println("[TEMP DEBUG LAYER 2] Parsed timeRange: start=" + timeRange.getStart() + ", end=" + timeRange.getEnd());
 
         RecommendationsResponse response = recommendationService.generateRecommendations(
                 contextScope,
@@ -42,6 +49,19 @@ public class RecommendationsController {
                 focus,
                 limit
         );
+
+        // TEMP DEBUG: Log recommendation count before returning
+        int recommendationCount = response.getRecommendations() != null ? response.getRecommendations().size() : 0;
+        System.out.println("[TEMP DEBUG LAYER 2] Recommendation count: " + recommendationCount);
+        
+        // TEMP DEBUG: Log full response structure
+        if (response.getRecommendations() != null && !response.getRecommendations().isEmpty()) {
+            System.out.println("[TEMP DEBUG LAYER 2] First recommendation ID: " + response.getRecommendations().get(0).getId());
+            System.out.println("[TEMP DEBUG LAYER 2] First recommendation title: " + response.getRecommendations().get(0).getTitle());
+            System.out.println("[TEMP DEBUG LAYER 2] First recommendation confidence: " + response.getRecommendations().get(0).getConfidence());
+        } else {
+            System.out.println("[TEMP DEBUG LAYER 2] WARNING: Recommendations list is null or empty!");
+        }
 
         return ResponseEntity.ok(response);
     }

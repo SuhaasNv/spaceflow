@@ -9,6 +9,7 @@ import com.spaceflow.aiengine.service.analytics.BookingUsageBucket;
 import com.spaceflow.aiengine.service.analytics.BookingUsageResponse;
 import com.spaceflow.aiengine.service.analytics.UtilizationPoint;
 import com.spaceflow.aiengine.service.analytics.UtilizationResponse;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
@@ -34,42 +35,58 @@ import java.util.stream.Collectors;
 public class HeuristicRecommendationService {
 
     private final AnalyticsClient analyticsClient;
+    private final Environment environment;
 
-    public HeuristicRecommendationService(AnalyticsClient analyticsClient) {
+    public HeuristicRecommendationService(AnalyticsClient analyticsClient, Environment environment) {
         this.analyticsClient = analyticsClient;
+        this.environment = environment;
     }
 
     public RecommendationsResponse generateRecommendations(ContextScope scope,
                                                            TimeRange timeRange,
                                                            String focus,
                                                            Integer limit) {
+        // TEMP DEBUG: Force dev fallback - unconditionally return 2 hardcoded DEV recommendations
+        // This step is REQUIRED to prove wiring. Ignore analytics data entirely.
+        System.out.println("[TEMP DEBUG LAYER 3] Forcing DEV fallback - returning 2 hardcoded recommendations");
+        
         RecommendationsResponse response = new RecommendationsResponse();
         response.setScope(scope);
         response.setTimeRange(timeRange);
         response.setFocus(focus);
 
-        String scopeType = scope.getType();
-        String scopeId = scope.getId();
-
-        String from = timeRange.getStart();
-        String to = timeRange.getEnd();
-
-        // Use daily granularity for heuristics by default.
-        String granularity = "daily";
-
-        UtilizationResponse utilization = analyticsClient.getUtilization(
-                scopeType, scopeId, from, to, granularity
-        );
-        BookingUsageResponse bookingUsage = analyticsClient.getBookingUsage(
-                scopeType, scopeId, from, to, granularity
-        );
-
         List<Recommendation> all = new ArrayList<>();
 
-        all.addAll(generateUnderutilizedSpaces(scope, timeRange, utilization));
-        all.addAll(generateBookingVsUsageMismatch(scope, timeRange, utilization, bookingUsage));
-        all.addAll(generatePeakCongestion(scope, timeRange, utilization));
-        all.addAll(generateHighNoShowPatterns(scope, timeRange, bookingUsage));
+        // TEMP DEBUG: Create 2 hardcoded DEV recommendations unconditionally
+        // Recommendation 1: dev-underutilized-1
+        Recommendation rec1 = new Recommendation();
+        rec1.setId("dev-underutilized-1");
+        rec1.setCategory("dev");
+        rec1.setTitle("DEV: Underutilized workspace area");
+        rec1.setDescription("DEV: This is a development-only recommendation. In production, this would suggest consolidating underutilized spaces based on actual utilization patterns.");
+        rec1.setConfidence(0.72); // > 0.6 as required
+        rec1.setImpactLevel("medium");
+        rec1.setCreatedAt(nowIso());
+        rec1.setPrimaryReasons(List.of(
+                "DEV: Simulated average utilization below 50% threshold",
+                "DEV: Simulated pattern showing consistent low occupancy periods"
+        ));
+        all.add(rec1);
+
+        // Recommendation 2: dev-no-show-1
+        Recommendation rec2 = new Recommendation();
+        rec2.setId("dev-no-show-1");
+        rec2.setCategory("dev");
+        rec2.setTitle("DEV: High no-show rates detected");
+        rec2.setDescription("DEV: This is a development-only recommendation. In production, this would indicate a gap between booked slots and actual usage, suggesting no-show patterns or overbooking.");
+        rec2.setConfidence(0.68); // > 0.6 as required
+        rec2.setImpactLevel("medium");
+        rec2.setCreatedAt(nowIso());
+        rec2.setPrimaryReasons(List.of(
+                "DEV: Simulated booking-to-usage ratio indicating frequent no-shows",
+                "DEV: Simulated pattern showing bookings exceed actual usage by 25%"
+        ));
+        all.add(rec2);
 
         // Deterministic ordering: sort by confidence desc, then title asc, then id asc.
         all.sort(Comparator
@@ -83,6 +100,7 @@ public class HeuristicRecommendationService {
         }
 
         response.setRecommendations(all);
+        System.out.println("[TEMP DEBUG LAYER 3] Returning " + all.size() + " DEV recommendations");
         return response;
     }
 
@@ -92,7 +110,22 @@ public class HeuristicRecommendationService {
         explanation.setRecommendationId(recommendationId);
 
         // Recommendation IDs are prefixed by category for simple reverse lookup.
-        if (recommendationId.startsWith("underutilized-")) {
+        if (recommendationId.startsWith("dev-")) {
+            // DEV ONLY: Explanation for development recommendations
+            explanation.setSummary("DEV: This is a development-only recommendation for demo purposes.");
+            explanation.setDetailedExplanation("This recommendation was generated in development mode when analytics data was empty. " +
+                    "It demonstrates the AI recommendations UI and should not be used for production decisions.");
+            explanation.setContributingSignals(List.of(
+                    contributing("Development mode", "Generated deterministically for frontend demos and testing."),
+                    contributing("Empty analytics data", "No real analytics data was available when this recommendation was created.")
+            ));
+            explanation.setConfidenceBreakdown(confidence(0.5,
+                    "DEV recommendation - confidence is set for demonstration purposes only."));
+            explanation.setCaveats(List.of(
+                    "This is a development-only recommendation and should not be used in production.",
+                    "Real recommendations require actual analytics data from the Analytics Service."
+            ));
+        } else if (recommendationId.startsWith("underutilized-")) {
             explanation.setSummary("Space appears to be consistently underutilized.");
             explanation.setDetailedExplanation("Based on utilization analytics, this space rarely exceeds a moderate occupancy threshold. " +
                     "This suggests an opportunity to consolidate, repurpose, or promote it.");
@@ -445,6 +478,84 @@ public class HeuristicRecommendationService {
             }
         }
         return String.join(", ", hours);
+    }
+
+    // DEV ONLY: Check if we're running in dev or local profile
+    private boolean isDevOrLocalProfile() {
+        String[] activeProfiles = environment.getActiveProfiles();
+        for (String profile : activeProfiles) {
+            if ("dev".equalsIgnoreCase(profile) || "local".equalsIgnoreCase(profile)) {
+                return true;
+            }
+        }
+        // Also check default profile if no active profiles are set (common in local dev)
+        String[] defaultProfiles = environment.getDefaultProfiles();
+        for (String profile : defaultProfiles) {
+            if ("dev".equalsIgnoreCase(profile) || "local".equalsIgnoreCase(profile)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // DEV ONLY: Check if analytics responses are empty or null
+    private boolean isAnalyticsEmpty(UtilizationResponse utilization, BookingUsageResponse bookingUsage) {
+        boolean utilizationEmpty = utilization == null
+                || utilization.getPoints() == null
+                || utilization.getPoints().isEmpty();
+        boolean bookingUsageEmpty = bookingUsage == null
+                || bookingUsage.getBuckets() == null
+                || bookingUsage.getBuckets().isEmpty();
+        return utilizationEmpty && bookingUsageEmpty;
+    }
+
+    // DEV ONLY: Generate a small, deterministic set of DEV recommendations for demos
+    private List<Recommendation> generateDevRecommendations(ContextScope scope, TimeRange timeRange) {
+        List<Recommendation> devRecs = new ArrayList<>();
+
+        // DEV Recommendation 1: Underutilized space
+        Recommendation rec1 = baseRecommendation(
+                "dev",
+                scope,
+                "DEV: Underutilized workspace area",
+                "DEV: This is a development-only recommendation. In production, this would suggest consolidating underutilized spaces based on actual utilization patterns."
+        );
+        rec1.setConfidence(0.72);
+        rec1.setPrimaryReasons(List.of(
+                "DEV: Simulated average utilization below 50% threshold",
+                "DEV: Simulated pattern showing consistent low occupancy periods"
+        ));
+        devRecs.add(rec1);
+
+        // DEV Recommendation 2: Booking vs usage mismatch
+        Recommendation rec2 = baseRecommendation(
+                "dev",
+                scope,
+                "DEV: Booking and usage pattern mismatch",
+                "DEV: This is a development-only recommendation. In production, this would indicate a gap between booked slots and actual usage, suggesting no-show patterns or overbooking."
+        );
+        rec2.setConfidence(0.68);
+        rec2.setPrimaryReasons(List.of(
+                "DEV: Simulated booking-to-usage ratio indicating frequent no-shows",
+                "DEV: Simulated pattern showing bookings exceed actual usage by 25%"
+        ));
+        devRecs.add(rec2);
+
+        // DEV Recommendation 3: Peak congestion
+        Recommendation rec3 = baseRecommendation(
+                "dev",
+                scope,
+                "DEV: Peak hour congestion periods",
+                "DEV: This is a development-only recommendation. In production, this would highlight recurring high-occupancy periods that may cause crowding."
+        );
+        rec3.setConfidence(0.75);
+        rec3.setPrimaryReasons(List.of(
+                "DEV: Simulated pattern showing repeated high utilization during 10:00-12:00 and 14:00-16:00",
+                "DEV: Simulated utilization exceeding 80% threshold in multiple time buckets"
+        ));
+        devRecs.add(rec3);
+
+        return devRecs;
     }
 }
 

@@ -38,23 +38,66 @@ const normalizeRecommendationsResponse = (
   response: unknown
 ): AiRecommendation[] => {
   const raw = response as any;
-  const itemsSource =
-    (Array.isArray(raw?.recommendations) && raw.recommendations) ||
-    (Array.isArray(raw?.items) && raw.items) ||
-    (Array.isArray(raw) && raw) ||
-    [];
+  
+  // TEMP DEBUG: Log normalization process
+  // eslint-disable-next-line no-console
+  console.log("[TEMP DEBUG LAYER 4] Normalization - raw.recommendations:", raw?.recommendations);
+  // eslint-disable-next-line no-console
+  console.log("[TEMP DEBUG LAYER 4] Normalization - raw.recommendations isArray:", Array.isArray(raw?.recommendations));
+  
+  // TEMP DEBUG: Try multiple ways to extract recommendations
+  let itemsSource: any[] = [];
+  
+  if (Array.isArray(raw?.recommendations)) {
+    itemsSource = raw.recommendations;
+    // eslint-disable-next-line no-console
+    console.log("[TEMP DEBUG LAYER 4] Found recommendations as array:", itemsSource);
+  } else if (Array.isArray(raw?.items)) {
+    itemsSource = raw.items;
+    // eslint-disable-next-line no-console
+    console.log("[TEMP DEBUG LAYER 4] Found items as array:", itemsSource);
+  } else if (Array.isArray(raw)) {
+    itemsSource = raw;
+    // eslint-disable-next-line no-console
+    console.log("[TEMP DEBUG LAYER 4] Response itself is array:", itemsSource);
+  } else if (raw?.recommendations && typeof raw.recommendations === "object") {
+    // TEMP DEBUG: Handle case where recommendations might be an object instead of array
+    // eslint-disable-next-line no-console
+    console.log("[TEMP DEBUG LAYER 4] WARNING: recommendations is object, not array:", raw.recommendations);
+    itemsSource = [];
+  } else {
+    // eslint-disable-next-line no-console
+    console.log("[TEMP DEBUG LAYER 4] WARNING: No recommendations found in response structure");
+    itemsSource = [];
+  }
+
+  // TEMP DEBUG: Log itemsSource
+  // eslint-disable-next-line no-console
+  console.log("[TEMP DEBUG LAYER 4] Normalization - itemsSource:", itemsSource);
+  // eslint-disable-next-line no-console
+  console.log("[TEMP DEBUG LAYER 4] Normalization - itemsSource length:", itemsSource.length);
 
   // TODO: Replace this generic normalization with a strongly typed model
   // once the AI Engine recommendations contract is finalized.
-  return (itemsSource as any[])
-    .filter(
-      (item) =>
-        item &&
+  const filtered = (itemsSource as any[]).filter(
+    (item) => {
+      const hasId = typeof (item as any)?.id === "string" || typeof (item as any)?.recommendationId === "string";
+      // TEMP DEBUG: Log filter result for each item
+      if (itemsSource.length > 0) {
+        // eslint-disable-next-line no-console
+        console.log("[TEMP DEBUG LAYER 4] Normalization - filtering item:", item, "hasId:", hasId);
+      }
+      return item &&
         typeof item === "object" &&
-        (typeof (item as any).id === "string" ||
-          typeof (item as any).recommendationId === "string")
-    )
-    .map((item) => {
+        hasId;
+    }
+  );
+  
+  // TEMP DEBUG: Log filtered results
+  // eslint-disable-next-line no-console
+  console.log("[TEMP DEBUG LAYER 4] Normalization - filtered count:", filtered.length);
+  
+  return filtered.map((item) => {
       const id =
         (item as any).id ??
         (item as any).recommendationId;
@@ -311,7 +354,34 @@ export const AiRecommendationsPanel = () => {
         });
         if (!isMounted) return;
 
+        // TEMP DEBUG: Log raw API response with detailed structure
+        // eslint-disable-next-line no-console
+        console.log("[TEMP DEBUG LAYER 4] Raw API response:", response);
+        // eslint-disable-next-line no-console
+        console.log("[TEMP DEBUG LAYER 4] Raw response type:", typeof response);
+        // eslint-disable-next-line no-console
+        console.log("[TEMP DEBUG LAYER 4] Raw response keys:", Object.keys(response || {}));
+        // eslint-disable-next-line no-console
+        console.log("[TEMP DEBUG LAYER 4] Raw response.recommendations:", (response as any)?.recommendations);
+        // eslint-disable-next-line no-console
+        console.log("[TEMP DEBUG LAYER 4] Raw response.recommendations type:", typeof (response as any)?.recommendations);
+        // eslint-disable-next-line no-console
+        console.log("[TEMP DEBUG LAYER 4] Raw response.recommendations isArray:", Array.isArray((response as any)?.recommendations));
+        if (Array.isArray((response as any)?.recommendations)) {
+          // eslint-disable-next-line no-console
+          console.log("[TEMP DEBUG LAYER 4] Raw response.recommendations length:", (response as any).recommendations.length);
+          // eslint-disable-next-line no-console
+          console.log("[TEMP DEBUG LAYER 4] Raw response.recommendations[0]:", (response as any).recommendations[0]);
+        }
+
         const normalized = normalizeRecommendationsResponse(response);
+        
+        // TEMP DEBUG: Log normalized recommendations array
+        // eslint-disable-next-line no-console
+        console.log("[TEMP DEBUG LAYER 4] Normalized recommendations array:", normalized);
+        // eslint-disable-next-line no-console
+        console.log("[TEMP DEBUG LAYER 4] Normalized recommendations count:", normalized.length);
+
         const raw = response as any;
         const scopeType = raw?.scope?.type;
         const scopeId = raw?.scope?.id;
@@ -458,92 +528,113 @@ export const AiRecommendationsPanel = () => {
         )}
 
         {!loading && !error && !hasRecommendations && (
-          <Box
-            sx={(theme) => ({
-              p: 2.5,
-              borderRadius: 2.5,
-              bgcolor: "rgba(15, 23, 42, 0.96)",
-              border: `1px dashed ${theme.palette.primary.main}33`,
-              boxShadow:
-                "0 18px 40px rgba(15, 23, 42, 0.9), 0 0 0 1px rgba(15, 23, 42, 0.9)",
-              position: "relative",
-              overflow: "hidden",
-              "&::before": {
-                content: '""',
-                position: "absolute",
-                inset: "-40% -40% auto",
-                background:
-                  "radial-gradient(circle at top, rgba(74, 222, 128, 0.16), transparent 60%)",
-                opacity: 0.9,
-                pointerEvents: "none"
-              }
-            })}
-          >
+          <>
+            {/* TEMP DEBUG: Fallback render - red warning box if array length === 0 */}
             <Box
               sx={{
+                p: 2,
+                borderRadius: 2,
+                bgcolor: "rgba(211, 47, 47, 0.1)",
+                border: (theme) => `2px solid ${theme.palette.error.main}`,
                 display: "flex",
                 flexDirection: "column",
-                alignItems: "center",
-                textAlign: "center",
-                gap: 1.5
+                gap: 1
               }}
+            >
+              <Typography variant="body1" color="error" sx={{ fontWeight: 600 }}>
+                [TEMP DEBUG] No AI recommendations received from backend
+              </Typography>
+              <Typography variant="body2" color="error">
+                Array length: {recommendations.length}
+              </Typography>
+            </Box>
+            <Box
+              sx={(theme) => ({
+                p: 2.5,
+                borderRadius: 2.5,
+                bgcolor: "rgba(15, 23, 42, 0.96)",
+                border: `1px dashed ${theme.palette.primary.main}33`,
+                boxShadow:
+                  "0 18px 40px rgba(15, 23, 42, 0.9), 0 0 0 1px rgba(15, 23, 42, 0.9)",
+                position: "relative",
+                overflow: "hidden",
+                "&::before": {
+                  content: '""',
+                  position: "absolute",
+                  inset: "-40% -40% auto",
+                  background:
+                    "radial-gradient(circle at top, rgba(74, 222, 128, 0.16), transparent 60%)",
+                  opacity: 0.9,
+                  pointerEvents: "none"
+                }
+              })}
             >
               <Box
                 sx={{
-                  display: "inline-flex",
+                  display: "flex",
+                  flexDirection: "column",
                   alignItems: "center",
-                  justifyContent: "center",
-                  width: 56,
-                  height: 56,
-                  borderRadius: "50%",
-                  bgcolor: "rgba(15, 23, 42, 0.9)",
-                  border: (theme) =>
-                    `1px solid ${theme.palette.primary.main}66`,
-                  boxShadow:
-                    "0 0 0 1px rgba(15, 23, 42, 0.9), 0 0 30px rgba(74, 222, 128, 0.45)",
-                  animation: "sfAiGlowPulse 2200ms ease-in-out infinite",
-                  "@keyframes sfAiGlowPulse": {
-                    "0%": {
-                      transform: "scale(1)",
-                      boxShadow:
-                        "0 0 0 1px rgba(15, 23, 42, 0.9), 0 0 18px rgba(74, 222, 128, 0.4)"
-                    },
-                    "50%": {
-                      transform: "scale(1.04)",
-                      boxShadow:
-                        "0 0 0 1px rgba(34, 197, 94, 0.7), 0 0 30px rgba(74, 222, 128, 0.8)"
-                    },
-                    "100%": {
-                      transform: "scale(1)",
-                      boxShadow:
-                        "0 0 0 1px rgba(15, 23, 42, 0.9), 0 0 18px rgba(74, 222, 128, 0.4)"
-                    }
-                  }
+                  textAlign: "center",
+                  gap: 1.5
                 }}
               >
-                <LightbulbOutlinedIcon
-                  fontSize="medium"
+                <Box
                   sx={{
-                    color: "primary.light"
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 56,
+                    height: 56,
+                    borderRadius: "50%",
+                    bgcolor: "rgba(15, 23, 42, 0.9)",
+                    border: (theme) =>
+                      `1px solid ${theme.palette.primary.main}66`,
+                    boxShadow:
+                      "0 0 0 1px rgba(15, 23, 42, 0.9), 0 0 30px rgba(74, 222, 128, 0.45)",
+                    animation: "sfAiGlowPulse 2200ms ease-in-out infinite",
+                    "@keyframes sfAiGlowPulse": {
+                      "0%": {
+                        transform: "scale(1)",
+                        boxShadow:
+                          "0 0 0 1px rgba(15, 23, 42, 0.9), 0 0 18px rgba(74, 222, 128, 0.4)"
+                      },
+                      "50%": {
+                        transform: "scale(1.04)",
+                        boxShadow:
+                          "0 0 0 1px rgba(34, 197, 94, 0.7), 0 0 30px rgba(74, 222, 128, 0.8)"
+                      },
+                      "100%": {
+                        transform: "scale(1)",
+                        boxShadow:
+                          "0 0 0 1px rgba(15, 23, 42, 0.9), 0 0 18px rgba(74, 222, 128, 0.4)"
+                      }
+                    }
                   }}
-                />
-              </Box>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
-                <Typography variant="subtitle1">
-                  No AI recommendations just yet
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  As SpaceFlow observes more workspace activity across bookings,
-                  room usage, and access patterns, advisory suggestions will
-                  begin to appear here to help you fine-tune your space usage.
-                </Typography>
-                <Typography variant="caption" color="text.disabled">
-                  These insights are optional, advisory-only, and are not a
-                  substitute for your own judgment.
-                </Typography>
+                >
+                  <LightbulbOutlinedIcon
+                    fontSize="medium"
+                    sx={{
+                      color: "primary.light"
+                    }}
+                  />
+                </Box>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+                  <Typography variant="subtitle1">
+                    No AI recommendations just yet
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    As SpaceFlow observes more workspace activity across bookings,
+                    room usage, and access patterns, advisory suggestions will
+                    begin to appear here to help you fine-tune your space usage.
+                  </Typography>
+                  <Typography variant="caption" color="text.disabled">
+                    These insights are optional, advisory-only, and are not a
+                    substitute for your own judgment.
+                  </Typography>
+                </Box>
               </Box>
             </Box>
-          </Box>
+          </>
         )}
 
         {!loading &&

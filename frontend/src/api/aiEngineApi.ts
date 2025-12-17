@@ -27,10 +27,30 @@ export const aiEngineApi = {
     // NOTE: AI Engine is versioned under /api/v1, see RecommendationsController.
     // When talking directly to the ai-engine service (e.g. http://localhost:8084),
     // the full URL is: {VITE_AI_ENGINE_BASE_URL}/api/v1/recommendations
+    
+    // TEMP DEBUG: Log request details
+    const fullUrl = `${aiBaseURL}/api/v1/recommendations`;
+    // eslint-disable-next-line no-console
+    console.log("[TEMP DEBUG LAYER 1] AI Engine API Request:", {
+      fullUrl,
+      baseURL: aiBaseURL,
+      path: "/api/v1/recommendations",
+      method: "GET",
+      queryParams: params
+    });
+    
     const response = await aiHttpClient.get<AiRecommendationsResponse>(
       "/api/v1/recommendations",
       { params }
     );
+
+    // TEMP DEBUG: Log raw response data
+    // eslint-disable-next-line no-console
+    console.log("[TEMP DEBUG LAYER 1] AI Engine API Response:", {
+      status: response.status,
+      statusText: response.statusText,
+      rawData: response.data
+    });
 
     return response.data;
   },
