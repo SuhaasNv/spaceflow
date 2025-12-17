@@ -3,6 +3,8 @@ package com.spaceflow.auth.api.controller;
 import com.spaceflow.auth.api.dto.FrontendAuthSessionResponse;
 import com.spaceflow.auth.api.dto.FrontendAuthUser;
 import com.spaceflow.auth.api.dto.FrontendLoginRequest;
+import com.spaceflow.auth.domain.User;
+import com.spaceflow.auth.domain.UserRepository;
 import com.spaceflow.auth.security.AuthService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Optional;
+
 /**
  * Thin facade that speaks the frontend's /auth/* contract while delegating
  * to the core AuthService.
@@ -29,14 +33,17 @@ import org.springframework.web.bind.annotation.RestController;
 public class FrontendAuthController {
 
     private final AuthService authService;
+    private final UserRepository userRepository;
     private final String cookieName;
     private final boolean cookieSecure;
 
     public FrontendAuthController(
             AuthService authService,
+            UserRepository userRepository,
             @Value("${auth.cookie.name:spaceflow_auth}") String cookieName,
             @Value("${auth.cookie.secure:false}") boolean cookieSecure) {
         this.authService = authService;
+        this.userRepository = userRepository;
         this.cookieName = cookieName;
         this.cookieSecure = cookieSecure;
     }
@@ -45,7 +52,7 @@ public class FrontendAuthController {
      * Frontend login endpoint.
      *
      * Request:  POST /auth/login with { "email", "password" }
-     * Response: { "user": { "id", "role" } }
+     * Response: { "user": { "id", "role", "email" } }
      */
     @PostMapping("/login")
     public ResponseEntity<FrontendAuthSessionResponse> login(
@@ -61,7 +68,11 @@ public class FrontendAuthController {
                 .sameSite("Lax")
                 .build();
 
-        FrontendAuthUser user = new FrontendAuthUser(result.getUserId(), result.getRole());
+        // Fetch user to get email for frontend display
+        Optional<User> userOpt = userRepository.findById(result.getUserId());
+        String email = userOpt.map(User::getEmail).orElse(request.getEmail());
+        
+        FrontendAuthUser user = new FrontendAuthUser(result.getUserId(), result.getRole(), email);
         FrontendAuthSessionResponse response = new FrontendAuthSessionResponse(user);
 
         return ResponseEntity.ok()
@@ -73,7 +84,7 @@ public class FrontendAuthController {
      * Frontend session validation endpoint.
      *
      * Request:  GET /auth/validate with auth cookie attached
-     * Response: { "user": { "id", "role" } } when valid, or { "user": null } when not.
+     * Response: { "user": { "id", "role", "email" } } when valid, or { "user": null } when not.
      */
     @GetMapping("/validate")
     public ResponseEntity<FrontendAuthSessionResponse> validate(HttpServletRequest request) {
@@ -83,7 +94,12 @@ public class FrontendAuthController {
         }
 
         AuthService.ValidationResult result = authService.validate(token);
-        FrontendAuthUser user = new FrontendAuthUser(result.getUserId(), result.getRole());
+        
+        // Fetch user to get email for frontend display
+        Optional<User> userOpt = userRepository.findById(result.getUserId());
+        String email = userOpt.map(User::getEmail).orElse(null);
+        
+        FrontendAuthUser user = new FrontendAuthUser(result.getUserId(), result.getRole(), email);
 
         return ResponseEntity.ok(new FrontendAuthSessionResponse(user));
     }

@@ -26,6 +26,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: spaceflow
     ports:
       - "8080:8080"
+    # Service name 'auth-service' is used by frontend for internal communication
 
   booking-service:
     container_name: spaceflow-booking-service
@@ -33,6 +34,7 @@ services:
       context: ./services/booking-service
     ports:
       - "8081:8080"
+    # Service name 'booking-service' can be used by other services
 
   occupancy-service:
     container_name: spaceflow-occupancy-service
@@ -40,6 +42,7 @@ services:
       context: ./services/occupancy-service
     ports:
       - "8082:8080"
+    # Service name 'occupancy-service' can be used by other services
 
   analytics-service:
     container_name: spaceflow-analytics-service
@@ -47,15 +50,39 @@ services:
       context: ./services/analytics-service
     ports:
       - "8083:8080"
+    # Service name 'analytics-service' is used by ai-engine and frontend for internal communication
 
   ai-engine:
     container_name: spaceflow-ai-engine
     build:
       context: ./services/ai-engine
+    depends_on:
+      - analytics-service
     environment:
       SPRING_PROFILES_ACTIVE: dev
+      # ai-engine connects to analytics-service using service name, not localhost
+      SERVICES_ANALYTICS_BASE_URL: http://analytics-service:8080
     ports:
       - "8084:8080"
+    # Service name 'ai-engine' can be used by frontend for internal communication
+
+  frontend:
+    container_name: spaceflow-frontend
+    build:
+      context: ./frontend
+      args:
+        # Build-time args for Vite (embedded in client bundle)
+        # These must use localhost because browser requests come from the user's machine
+        VITE_AUTH_API_BASE_URL: http://localhost:8080
+        VITE_ANALYTICS_API_BASE_URL: http://localhost:8083
+    depends_on:
+      - auth-service
+      - analytics-service
+    ports:
+      - "3000:80"
+    # Note: Frontend makes client-side requests from the browser, so URLs must be
+    # accessible from the host machine (localhost), not Docker service names.
+    # Service-to-service communication (e.g., ai-engine -> analytics-service) uses service names.
 
 volumes:
   auth-db-data:

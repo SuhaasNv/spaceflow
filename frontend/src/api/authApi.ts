@@ -3,6 +3,7 @@ import { authHttpClient } from "./httpClient";
 export interface AuthUser {
   id: string;
   role: string;
+  email?: string;
 }
 
 export interface LoginResponse {
