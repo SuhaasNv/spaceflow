@@ -15,6 +15,7 @@ import {
 export interface User {
   id: string;
   role: string;
+  email?: string;
 }
 
 interface AuthContextType {
@@ -60,7 +61,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const handleLogin = async (email: string, password: string) => {
     const authUser = await apiLogin(email, password);
-    setUser(mapAuthUser(authUser));
+    // We know the email from the login form; attach it so the UI can
+    // display a friendly identifier without changing backend contracts.
+    setUser({
+      ...mapAuthUser(authUser),
+      email
+    });
   };
 
   const handleLogout = async () => {

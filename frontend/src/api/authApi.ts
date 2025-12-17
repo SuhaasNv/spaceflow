@@ -1,4 +1,4 @@
-import { httpClient } from "./httpClient";
+import { authHttpClient } from "./httpClient";
 
 export interface AuthUser {
   id: string;
@@ -16,7 +16,7 @@ export interface ValidateSessionResponse {
 const withCredsConfig = { withCredentials: true as const };
 
 export async function login(email: string, password: string): Promise<AuthUser> {
-  const response = await httpClient.post<LoginResponse>(
+  const response = await authHttpClient.post<LoginResponse>(
     "/auth/login",
     { email, password },
     withCredsConfig
@@ -25,7 +25,7 @@ export async function login(email: string, password: string): Promise<AuthUser> 
 }
 
 export async function validateSession(): Promise<AuthUser | null> {
-  const response = await httpClient.get<ValidateSessionResponse>(
+  const response = await authHttpClient.get<ValidateSessionResponse>(
     "/auth/validate",
     withCredsConfig
   );
@@ -33,7 +33,7 @@ export async function validateSession(): Promise<AuthUser | null> {
 }
 
 export async function logout(): Promise<void> {
-  await httpClient.post("/auth/logout", undefined, withCredsConfig);
+  await authHttpClient.post("/auth/logout", undefined, withCredsConfig);
 }
 
 

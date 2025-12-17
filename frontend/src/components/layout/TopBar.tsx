@@ -48,7 +48,9 @@ export const TopBar = ({ onMenuClick, isSidebarOpen }: TopBarProps) => {
     if (!user) {
       return "";
     }
-    return user.id.charAt(0).toUpperCase();
+    const source = user.email ?? user.id;
+    const firstChar = source.trim().charAt(0);
+    return firstChar ? firstChar.toUpperCase() : "";
   };
 
   if (!user) {
@@ -246,7 +248,7 @@ export const TopBar = ({ onMenuClick, isSidebarOpen }: TopBarProps) => {
                   maxWidth: "200px"
                 }}
               >
-                {user.id}
+                {user.email ?? user.id}
               </Typography>
               {role && (
                 <Chip

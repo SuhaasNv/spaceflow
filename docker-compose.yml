@@ -1,10 +1,29 @@
 version: '3.8'
 
 services:
+  auth-db:
+    container_name: spaceflow-auth-db
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: spaceflow_auth
+      POSTGRES_USER: spaceflow
+      POSTGRES_PASSWORD: spaceflow
+    ports:
+      - "5432:5432"
+    volumes:
+      - auth-db-data:/var/lib/postgresql/data
+
   auth-service:
     container_name: spaceflow-auth-service
     build:
       context: ./services/auth-service
+    depends_on:
+      - auth-db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://auth-db:5432/spaceflow_auth
+      SPRING_DATASOURCE_USERNAME: spaceflow
+      SPRING_DATASOURCE_PASSWORD: spaceflow
     ports:
       - "8080:8080"
 
@@ -35,3 +54,6 @@ services:
       context: ./services/ai-engine
     ports:
       - "8084:8080"
+
+volumes:
+  auth-db-data:

@@ -1,4 +1,4 @@
-import { httpClient } from "./httpClient";
+import { analyticsHttpClient } from "./httpClient";
 
 export interface UtilizationQueryParams {
   [key: string]: string | number | boolean | undefined;
@@ -15,7 +15,7 @@ export const analyticsApi = {
   async getUtilization(
     params?: UtilizationQueryParams
   ): Promise<UtilizationResponse> {
-    const response = await httpClient.get<UtilizationResponse>(
+    const response = await analyticsHttpClient.get<UtilizationResponse>(
       "/api/v1/utilization",
       { params }
     );
@@ -26,7 +26,7 @@ export const analyticsApi = {
   async getBookingUsage(
     params?: BookingUsageQueryParams
   ): Promise<BookingUsageResponse> {
-    const response = await httpClient.get<BookingUsageResponse>(
+    const response = await analyticsHttpClient.get<BookingUsageResponse>(
       "/api/v1/booking-usage",
       { params }
     );
