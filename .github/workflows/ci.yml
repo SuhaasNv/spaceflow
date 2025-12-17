@@ -158,6 +158,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        # BuildKit is enabled by default in buildx, no additional config needed
+
       - name: Verify Dockerfile exists
         run: |
           if [ ! -f "${{ matrix.dockerfile }}" ]; then
@@ -166,20 +170,37 @@ jobs:
           fi
           echo "✓ Dockerfile verified: ${{ matrix.dockerfile }}"
 
-      - name: Build Docker image
+      - name: Build Docker image with cache
         run: |
           IMAGE_TAG="${{ matrix.image }}:${{ needs.docker-tags.outputs.image_tag }}"
+          # Service-specific cache key to avoid conflicts in parallel matrix jobs
+          # Include branch name to prevent cache poisoning across branches
+          # Format: docker-layer-cache-<service>-<branch>
+          CACHE_KEY="docker-layer-cache-${{ matrix.service }}-${{ needs.docker-tags.outputs.branch_name }}"
+          
           echo "🔨 Building: ${IMAGE_TAG}"
           echo "   Service: ${{ matrix.service }}"
           echo "   Dockerfile: ${{ matrix.dockerfile }}"
           echo "   Context: ${{ matrix.context }}"
+          echo "   Cache: ${CACHE_KEY}"
+          echo "   (Using BuildKit cache for faster builds)"
           
-          docker build \
-            -t "${IMAGE_TAG}" \
-            -f "${{ matrix.dockerfile }}" \
+          # Build with BuildKit cache using GitHub Actions cache backend (gha)
+          # --cache-from: Load cache from previous builds (cache hit = faster build)
+          # --cache-to: Save cache for future builds (persists across CI runs)
+          # mode=max: Cache all layers including intermediate layers for maximum reuse
+          # scope: Service-specific cache key ensures parallel builds don't conflict
+          docker buildx build \
+            --tag "${IMAGE_TAG}" \
+            --file "${{ matrix.dockerfile }}" \
+            --cache-from type=gha,scope=${CACHE_KEY} \
+            --cache-to type=gha,mode=max,scope=${CACHE_KEY} \
+            --load \
+            --progress=plain \
             "${{ matrix.context }}"
           
           echo "✅ Built: ${IMAGE_TAG}"
+          echo "   Cache saved for future builds"
 
       - name: Summary
         run: |
