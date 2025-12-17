@@ -2,12 +2,20 @@ package com.spaceflow.auth.api.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spaceflow.auth.api.dto.AuthenticationRequest;
+import com.spaceflow.auth.security.AuthService;
+import com.spaceflow.auth.security.exception.AuthenticationException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.UUID;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -24,21 +32,49 @@ class AuthenticationControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @MockBean
+    private AuthService authService;
+
     @Test
-    void authenticate_WithValidRequest_Returns200() throws Exception {
+    void authenticate_WithValidCredentials_Returns200AndSetsCookie() throws Exception {
         // Given
         AuthenticationRequest request = new AuthenticationRequest();
-        request.setUsername("testuser");
+        request.setUsername("user@example.com");
         request.setPassword("testpassword");
+        UUID userId = UUID.randomUUID();
+
+        given(authService.authenticate(eq("user@example.com"), eq("testpassword")))
+                .willReturn(new AuthService.AuthenticationResult(userId, "USER", "test-token"));
 
         // When & Then
         mockMvc.perform(post("/api/v1/authenticate")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
+                        .andExpect(status().isOk())
+                        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                        .andExpect(jsonPath("$.identityReference").value(userId.toString()))
+                        .andExpect(jsonPath("$.role").value("USER"))
+                        .andExpect(header().exists("Set-Cookie"))
+                        .andExpect(header().string("Set-Cookie", org.hamcrest.Matchers.containsString("spaceflow_auth=")));
+    }
+
+    @Test
+    void authenticate_WithInvalidCredentials_Returns401() throws Exception {
+        // Given
+        AuthenticationRequest request = new AuthenticationRequest();
+        request.setUsername("user@example.com");
+        request.setPassword("wrongpassword");
+
+        given(authService.authenticate(eq("user@example.com"), eq("wrongpassword")))
+                .willThrow(new AuthenticationException("Invalid credentials"));
+
+        // When & Then
+        mockMvc.perform(post("/api/v1/authenticate")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.identityReference").exists())
-                .andExpect(jsonPath("$.role").exists());
+                .andExpect(jsonPath("$.error").value("AUTHENTICATION_FAILED"));
     }
 
     @Test
@@ -109,8 +145,13 @@ class AuthenticationControllerTest {
     void authenticate_EndpointIsReachable() throws Exception {
         // Given
         AuthenticationRequest request = new AuthenticationRequest();
-        request.setUsername("testuser");
+        request.setUsername("user@example.com");
         request.setPassword("testpassword");
+        UUID userId = UUID.randomUUID();
+
+        // For reachability we still mock a simple successful authentication
+        given(authService.authenticate(eq("user@example.com"), eq("testpassword")))
+                .willReturn(new AuthService.AuthenticationResult(userId, "USER", "test-token"));
 
         // When & Then - Verify endpoint exists and is accessible
         mockMvc.perform(post("/api/v1/authenticate")

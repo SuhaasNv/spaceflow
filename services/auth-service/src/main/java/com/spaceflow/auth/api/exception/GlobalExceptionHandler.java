@@ -1,6 +1,7 @@
 package com.spaceflow.auth.api.exception;
 
 import com.spaceflow.auth.api.dto.ErrorResponse;
+import com.spaceflow.auth.security.exception.AuthenticationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -36,6 +37,21 @@ public class GlobalExceptionHandler {
         errorResponse.setMessage(errorMessage);
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    /**
+     * Handles authentication and authorization failures.
+     *
+     * @param ex AuthenticationException
+     * @return ErrorResponse with authentication error details
+     */
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorResponse> handleAuthenticationException(AuthenticationException ex) {
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setError("AUTHENTICATION_FAILED");
+        errorResponse.setMessage(ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
     }
 
     /**
