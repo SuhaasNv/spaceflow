@@ -20,6 +20,12 @@ interface AiRecommendation {
   category?: string;
   impactLevel?: string;
   confidencePercent?: number | null;
+  primaryReasons?: string[];
+}
+
+interface AiRecommendationsContextMeta {
+  scopeLabel?: string;
+  timeRangeLabel?: string;
 }
 
 interface AiRecommendationExplanationViewModel {
@@ -70,9 +76,18 @@ const normalizeRecommendationsResponse = (
         // NOTE: We do not compute or transform confidence values here – we only
         // surface what the backend provides.
         confidencePercent:
-          typeof (item as any).confidencePercent === "number"
+          typeof (item as any).confidence === "number"
+            ? (item as any).confidence * 100 // Backend provides 0-1, convert to 0-100 for display
+            : typeof (item as any).confidencePercent === "number"
             ? (item as any).confidencePercent
-            : null
+            : null,
+        primaryReasons:
+          Array.isArray((item as any).primaryReasons) &&
+          (item as any).primaryReasons.length > 0
+            ? (item as any).primaryReasons.filter(
+                (r: unknown) => typeof r === "string"
+              )
+            : undefined
       };
     });
 };
@@ -164,12 +179,30 @@ const getConfidenceLabel = (
   const level = getConfidenceVisualLevel(confidencePercent);
 
   if (level === "high") {
-    return "High confidence (advisory)";
+    return "High";
   }
   if (level === "medium") {
-    return "Medium confidence (advisory)";
+    return "Medium";
   }
-  return "Low confidence (advisory)";
+  return "Low";
+};
+
+const getConfidenceCaption = (
+  confidencePercent: number | null | undefined
+): string => {
+  if (typeof confidencePercent !== "number") {
+    return "Confidence was not provided for this suggestion.";
+  }
+
+  const level = getConfidenceVisualLevel(confidencePercent);
+
+  if (level === "high") {
+    return "Based on strong and consistent patterns in aggregated workspace behaviour. Advisory only.";
+  }
+  if (level === "medium") {
+    return "Based on noticeable patterns in aggregated workspace behaviour and should be cross-checked with your context.";
+  }
+  return "Based on weaker or noisier patterns in aggregated workspace behaviour. Treat as a light suggestion.";
 };
 
 const getSuggestedAction = (rec: AiRecommendation): string | null => {
@@ -185,6 +218,8 @@ export const AiRecommendationsPanel = () => {
   const [recommendations, setRecommendations] = useState<AiRecommendation[]>(
     []
   );
+  const [recommendationsContext, setRecommendationsContext] =
+    useState<AiRecommendationsContextMeta | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -205,6 +240,26 @@ export const AiRecommendationsPanel = () => {
         scope: "WORKSPACE:demo"
       });
       const normalized = normalizeRecommendationsResponse(response);
+      const raw = response as any;
+      const scopeType = raw?.scope?.type;
+      const scopeId = raw?.scope?.id;
+      const timeStart = raw?.timeRange?.start;
+      const timeEnd = raw?.timeRange?.end;
+
+      setRecommendationsContext({
+        scopeLabel:
+          typeof scopeType === "string" && typeof scopeId === "string"
+            ? `${scopeType} ${scopeId}`
+            : undefined,
+        timeRangeLabel:
+          typeof timeStart === "string" && typeof timeEnd === "string"
+            ? `recent activity between ${new Date(
+                timeStart
+              ).toLocaleDateString()} and ${new Date(
+                timeEnd
+              ).toLocaleDateString()}`
+            : undefined
+      });
       setRecommendations(normalized);
     } catch (e) {
       // eslint-disable-next-line no-console
@@ -257,6 +312,26 @@ export const AiRecommendationsPanel = () => {
         if (!isMounted) return;
 
         const normalized = normalizeRecommendationsResponse(response);
+        const raw = response as any;
+        const scopeType = raw?.scope?.type;
+        const scopeId = raw?.scope?.id;
+        const timeStart = raw?.timeRange?.start;
+        const timeEnd = raw?.timeRange?.end;
+
+        setRecommendationsContext({
+          scopeLabel:
+            typeof scopeType === "string" && typeof scopeId === "string"
+              ? `${scopeType} ${scopeId}`
+              : undefined,
+          timeRangeLabel:
+            typeof timeStart === "string" && typeof timeEnd === "string"
+              ? `recent activity between ${new Date(
+                  timeStart
+                ).toLocaleDateString()} and ${new Date(
+                  timeEnd
+                ).toLocaleDateString()}`
+              : undefined
+        });
         setRecommendations(normalized);
       } catch (e) {
         if (!isMounted) return;
@@ -459,8 +534,8 @@ export const AiRecommendationsPanel = () => {
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   As SpaceFlow observes more workspace activity across bookings,
-                  sensors, and access patterns, advisory suggestions will begin
-                  to appear here to help you fine-tune your space usage.
+                  room usage, and access patterns, advisory suggestions will
+                  begin to appear here to help you fine-tune your space usage.
                 </Typography>
                 <Typography variant="caption" color="text.disabled">
                   These insights are optional, advisory-only, and are not a
@@ -577,15 +652,121 @@ export const AiRecommendationsPanel = () => {
                       }}
                       aria-label="Recommendation confidence"
                     />
-                    <Typography variant="caption" color="text.secondary">
-                      {getConfidenceLabel(rec.confidencePercent)}
-                    </Typography>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "flex-start",
+                        gap: 0.25,
+                        mt: 0.25
+                      }}
+                    >
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          fontWeight: 600,
+                          letterSpacing: "0.04em",
+                          textTransform: "uppercase"
+                        }}
+                      >
+                        {getConfidenceLabel(rec.confidencePercent)} confidence
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {getConfidenceCaption(rec.confidencePercent)}
+                      </Typography>
+                    </Box>
                   </Box>
                 ) : (
                   <Typography variant="caption" color="text.disabled">
                     No confidence score provided.
                   </Typography>
                 )}
+              </Box>
+
+              <Box
+                sx={{
+                  mt: 1,
+                  pt: 1.5,
+                  borderTop: (theme) =>
+                    `1px solid ${theme.palette.divider}33`
+                }}
+                role="region"
+                aria-label="Recommendation context"
+              >
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  component="h3"
+                  sx={{
+                    display: "block",
+                    fontWeight: 500,
+                    mb: 0.5,
+                    fontSize: { xs: "0.6875rem", sm: "0.7rem" },
+                    letterSpacing: "0.02em",
+                    textTransform: "uppercase"
+                  }}
+                >
+                  Based on
+                </Typography>
+                {rec.primaryReasons && rec.primaryReasons.length > 0 ? (
+                  <Box
+                    component="ul"
+                    sx={{
+                      m: 0,
+                      pl: { xs: 1.75, sm: 2 },
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 0.5,
+                      listStyleType: "disc"
+                    }}
+                    aria-label="High-level patterns used for this recommendation"
+                  >
+                    {rec.primaryReasons.map((reason, idx) => (
+                      <Box
+                        key={idx}
+                        component="li"
+                        sx={{
+                          fontSize: { xs: "0.75rem", sm: "0.8125rem" },
+                          lineHeight: { xs: 1.4, sm: 1.5 },
+                          color: "text.secondary",
+                          wordBreak: "break-word",
+                          "&::marker": {
+                            color: "primary.light",
+                            opacity: 0.6
+                          }
+                        }}
+                      >
+                        {reason}
+                      </Box>
+                    ))}
+                  </Box>
+                ) : (
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{
+                      fontSize: { xs: "0.75rem", sm: "0.8rem" }
+                    }}
+                  >
+                    {recommendationsContext?.timeRangeLabel
+                      ? `Aggregated workspace patterns over ${recommendationsContext.timeRangeLabel}.`
+                      : "Aggregated workspace patterns over recent activity in this context."}
+                  </Typography>
+                )}
+                <Typography
+                  variant="caption"
+                  color="text.disabled"
+                  sx={{
+                    display: "block",
+                    mt: 0.75,
+                    fontSize: { xs: "0.625rem", sm: "0.6875rem" },
+                    fontStyle: "italic"
+                  }}
+                  role="note"
+                  aria-label="Advisory notice"
+                >
+                  Traceable to high-level, aggregated behaviour only — not raw events or individual people.
+                </Typography>
               </Box>
 
               {(() => {
