@@ -46,47 +46,42 @@ public class HeuristicRecommendationService {
                                                            TimeRange timeRange,
                                                            String focus,
                                                            Integer limit) {
-        // TEMP DEBUG: Force dev fallback - unconditionally return 2 hardcoded DEV recommendations
-        // This step is REQUIRED to prove wiring. Ignore analytics data entirely.
-        System.out.println("[TEMP DEBUG LAYER 3] Forcing DEV fallback - returning 2 hardcoded recommendations");
-        
         RecommendationsResponse response = new RecommendationsResponse();
         response.setScope(scope);
         response.setTimeRange(timeRange);
         response.setFocus(focus);
 
+        String scopeType = scope.getType();
+        String scopeId = scope.getId();
+
+        String from = timeRange.getStart();
+        String to = timeRange.getEnd();
+
+        // Use daily granularity for heuristics by default.
+        String granularity = "daily";
+
+        UtilizationResponse utilization = analyticsClient.getUtilization(
+                scopeType, scopeId, from, to, granularity
+        );
+        BookingUsageResponse bookingUsage = analyticsClient.getBookingUsage(
+                scopeType, scopeId, from, to, granularity
+        );
+
         List<Recommendation> all = new ArrayList<>();
 
-        // TEMP DEBUG: Create 2 hardcoded DEV recommendations unconditionally
-        // Recommendation 1: dev-underutilized-1
-        Recommendation rec1 = new Recommendation();
-        rec1.setId("dev-underutilized-1");
-        rec1.setCategory("dev");
-        rec1.setTitle("DEV: Underutilized workspace area");
-        rec1.setDescription("DEV: This is a development-only recommendation. In production, this would suggest consolidating underutilized spaces based on actual utilization patterns.");
-        rec1.setConfidence(0.72); // > 0.6 as required
-        rec1.setImpactLevel("medium");
-        rec1.setCreatedAt(nowIso());
-        rec1.setPrimaryReasons(List.of(
-                "DEV: Simulated average utilization below 50% threshold",
-                "DEV: Simulated pattern showing consistent low occupancy periods"
-        ));
-        all.add(rec1);
+        // DEV ONLY: If analytics responses are empty and we're in dev/local profile,
+        // return a small set of clearly labeled DEV recommendations for demos.
+        boolean isDevOrLocal = isDevOrLocalProfile();
+        boolean analyticsEmpty = isAnalyticsEmpty(utilization, bookingUsage);
 
-        // Recommendation 2: dev-no-show-1
-        Recommendation rec2 = new Recommendation();
-        rec2.setId("dev-no-show-1");
-        rec2.setCategory("dev");
-        rec2.setTitle("DEV: High no-show rates detected");
-        rec2.setDescription("DEV: This is a development-only recommendation. In production, this would indicate a gap between booked slots and actual usage, suggesting no-show patterns or overbooking.");
-        rec2.setConfidence(0.68); // > 0.6 as required
-        rec2.setImpactLevel("medium");
-        rec2.setCreatedAt(nowIso());
-        rec2.setPrimaryReasons(List.of(
-                "DEV: Simulated booking-to-usage ratio indicating frequent no-shows",
-                "DEV: Simulated pattern showing bookings exceed actual usage by 25%"
-        ));
-        all.add(rec2);
+        if (analyticsEmpty && isDevOrLocal) {
+            all.addAll(generateDevRecommendations(scope, timeRange));
+        } else {
+            all.addAll(generateUnderutilizedSpaces(scope, timeRange, utilization));
+            all.addAll(generateBookingVsUsageMismatch(scope, timeRange, utilization, bookingUsage));
+            all.addAll(generatePeakCongestion(scope, timeRange, utilization));
+            all.addAll(generateHighNoShowPatterns(scope, timeRange, bookingUsage));
+        }
 
         // Deterministic ordering: sort by confidence desc, then title asc, then id asc.
         all.sort(Comparator
@@ -100,7 +95,6 @@ public class HeuristicRecommendationService {
         }
 
         response.setRecommendations(all);
-        System.out.println("[TEMP DEBUG LAYER 3] Returning " + all.size() + " DEV recommendations");
         return response;
     }
 
@@ -558,5 +552,4 @@ public class HeuristicRecommendationService {
         return devRecs;
     }
 }
-
 

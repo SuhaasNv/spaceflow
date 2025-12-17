@@ -39,14 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         const sessionUser = await validateSession();
         if (isMounted && sessionUser) {
-          const storedEmail =
-            typeof window !== "undefined"
-              ? window.localStorage.getItem("spaceflow_auth_email") ?? undefined
-              : undefined;
-          setUser({
-            ...mapAuthUser(sessionUser),
-            email: storedEmail
-          });
+          setUser(mapAuthUser(sessionUser));
         }
       } catch {
         if (isMounted) {
@@ -70,9 +63,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const authUser = await apiLogin(email, password);
     // We know the email from the login form; attach it so the UI can
     // display a friendly identifier without changing backend contracts.
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem("spaceflow_auth_email", email);
-    }
     setUser({
       ...mapAuthUser(authUser),
       email
@@ -83,9 +73,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await apiLogout();
     } finally {
-      if (typeof window !== "undefined") {
-        window.localStorage.removeItem("spaceflow_auth_email");
-      }
       setUser(null);
     }
   };
