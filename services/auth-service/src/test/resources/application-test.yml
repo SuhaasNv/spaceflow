@@ -1,0 +1,47 @@
+# Test Profile Configuration
+# This profile ensures tests are fully hermetic and CI-safe.
+# Tests run without external dependencies: no PostgreSQL, no Docker, no secrets.
+
+spring:
+  # Test isolation: Use H2 in-memory database instead of PostgreSQL
+  # H2 is embedded and requires no external setup, making tests deterministic
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  
+  # Test isolation: Use H2-compatible dialect for JPA
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: false
+  
+  # Test isolation: Disable Flyway/Liquibase if present (not needed for H2 schema)
+  flyway:
+    enabled: false
+  liquibase:
+    enabled: false
+
+# Test isolation: Use deterministic JWT secret for tests
+# This ensures token validation is consistent across test runs
+auth:
+  jwt:
+    secret: test-secret-key-for-ci-deterministic-tokens
+    expiration-seconds: 3600
+  cookie:
+    name: spaceflow_auth
+    secure: false
+
+# Test isolation: Reduce logging noise in CI
+logging:
+  level:
+    com.spaceflow.auth: INFO
+    org.springframework: WARN
+    org.hibernate: WARN
+    org.h2: WARN
+
