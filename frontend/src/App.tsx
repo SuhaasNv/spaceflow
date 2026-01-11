@@ -31,6 +31,7 @@ const App = () => {
   }
 
   // Public routes: homepage and login (no layout wrapper needed for login, PublicLayout for homepage)
+  // In demo mode, RootRoute will handle redirect to dashboard, so we still render AppRoutes
   if (isHomePage) {
     return (
       <PublicLayout>

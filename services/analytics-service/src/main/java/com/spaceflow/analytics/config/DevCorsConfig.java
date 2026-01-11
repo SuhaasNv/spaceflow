@@ -10,13 +10,16 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * Dev/local-only CORS configuration for the Analytics Service.
  *
  * This is intentionally narrow to allow the SpaceFlow frontend
- * (Vite dev server on http://localhost:5173) to call the API
- * during local development without opening CORS broadly.
+ * (Vite dev server on http://localhost:5173 or Docker frontend on http://localhost:3000)
+ * to call the API during local development without opening CORS broadly.
  */
 @Configuration
 public class DevCorsConfig {
 
-    private static final String LOCAL_FRONTEND_ORIGIN = "http://localhost:5173";
+    private static final String[] ALLOWED_ORIGINS = {
+        "http://localhost:5173",  // Vite dev server
+        "http://localhost:3000"   // Docker frontend
+    };
 
     @Bean
     public WebMvcConfigurer devCorsWebMvcConfigurer(Environment environment) {
@@ -26,7 +29,7 @@ public class DevCorsConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins(LOCAL_FRONTEND_ORIGIN)
+                        .allowedOrigins(ALLOWED_ORIGINS)
                         .allowedMethods("GET")
                         .allowedHeaders("Authorization", "Content-Type");
             }

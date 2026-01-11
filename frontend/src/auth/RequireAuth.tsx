@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { Box, CircularProgress } from "@mui/material";
 import { useAuth } from "../context/AuthContext";
+import { isDemoMode } from "../config/demoMode";
 
 interface RequireAuthProps {
   children: ReactNode;
@@ -9,6 +10,7 @@ interface RequireAuthProps {
 
 export const RequireAuth = ({ children }: RequireAuthProps) => {
   const { isAuthenticated, loading } = useAuth();
+  const demoMode = isDemoMode();
 
   if (loading) {
     return (
@@ -26,6 +28,13 @@ export const RequireAuth = ({ children }: RequireAuthProps) => {
     );
   }
 
+  // Demo mode: Always allow access (authentication is bypassed)
+  // TODO: In production, remove demo mode or set VITE_DEMO_AUTH=false
+  if (demoMode) {
+    return <>{children}</>;
+  }
+
+  // Production mode: Require authentication
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }

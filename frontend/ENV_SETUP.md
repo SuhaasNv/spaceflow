@@ -37,3 +37,8 @@ For production deployments, you would typically:
 2. Use a reverse proxy or API gateway
 3. Configure CORS appropriately on backend services
 
+
+
+
+
+

@@ -394,7 +394,7 @@ export const Login = () => {
               textAlign: "center"
             }}
           >
-              <Typography
+            <Typography
               variant="caption"
               sx={{
                 display: "block",
@@ -412,11 +412,62 @@ export const Login = () => {
                 display: "block",
                 color: "rgba(148, 163, 184, 0.5)",
                 fontSize: "0.6875rem",
-                letterSpacing: "0.01em"
+                letterSpacing: "0.01em",
+                mb: 2
               }}
             >
               Sign in with your SpaceFlow credentials
             </Typography>
+            
+            {/* Interview Quick Access Credentials */}
+            <Box
+              sx={{
+                mt: 3,
+                p: 2,
+                borderRadius: 2,
+                bgcolor: "rgba(20, 184, 166, 0.08)",
+                border: "1px solid",
+                borderColor: "rgba(20, 184, 166, 0.2)"
+              }}
+            >
+              <Typography
+                variant="caption"
+                sx={{
+                  display: "block",
+                  color: "rgba(20, 184, 166, 0.9)",
+                  fontSize: "0.6875rem",
+                  fontWeight: 600,
+                  mb: 1,
+                  letterSpacing: "0.02em",
+                  textTransform: "uppercase"
+                }}
+              >
+                Quick Access (Interview)
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{
+                  display: "block",
+                  color: "rgba(148, 163, 184, 0.8)",
+                  fontSize: "0.75rem",
+                  fontFamily: "monospace",
+                  mb: 0.5
+                }}
+              >
+                Email: admin@spaceflow.local
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{
+                  display: "block",
+                  color: "rgba(148, 163, 184, 0.8)",
+                  fontSize: "0.75rem",
+                  fontFamily: "monospace"
+                }}
+              >
+                Password: admin123
+              </Typography>
+            </Box>
           </Box>
         </Box>
       </Box>

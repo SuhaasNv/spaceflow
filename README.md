@@ -80,41 +80,247 @@ The CI pipeline (`.github/workflows/ci.yml`) runs on every push and pull request
 
 ## Running Locally
 
-### Option 1: Docker Compose (All Services)
+### Quick Start (Recommended)
 
 **Prerequisites:**
-- Docker and Docker Compose installed
+- Docker Desktop (includes Docker and Docker Compose)
+- 8GB+ RAM available for Docker
+- Ports 3000, 5432, 8080-8084 available
 
-**Start all services:**
+**Start the entire platform:**
 
 ```bash
 docker-compose up --build
 ```
 
-**Service URLs:**
-- Frontend: http://localhost:3000
-- Auth Service: http://localhost:8080
-- Booking Service: http://localhost:8081
-- Occupancy Service: http://localhost:8082
-- Analytics Service: http://localhost:8083
-- AI Engine: http://localhost:8084
+This single command will:
+1. Build all service images
+2. Start PostgreSQL database
+3. Wait for database readiness
+4. Start all backend services with health checks
+5. Start the frontend after all dependencies are healthy
 
-**Notes:**
-- Services communicate internally using Docker Compose service names (e.g., `analytics-service:8080`)
-- Frontend makes browser requests to `localhost` ports (browser can't resolve Docker service names)
-- The `ai-engine` connects to `analytics-service` using the service name (server-to-server communication)
+**Platform URLs:**
+- **Frontend**: http://localhost:3000
+- **Auth Service**: http://localhost:8080
+- **Booking Service**: http://localhost:8081
+- **Occupancy Service**: http://localhost:8082
+- **Analytics Service**: http://localhost:8083
+- **AI Engine**: http://localhost:8084
 
-**View logs:**
+**Verify services are running:**
 ```bash
-docker-compose logs -f <service-name>
+# Check all service health
+docker-compose ps
+
+# View logs for a specific service
+docker-compose logs -f auth-service
+
+# View all logs
+docker-compose logs -f
 ```
 
-**Stop services:**
+**Stop the platform:**
 ```bash
 docker-compose down
 ```
 
-### Option 2: Local Development (Frontend Only)
+**Clean restart (removes volumes):**
+```bash
+docker-compose down -v
+docker-compose up --build
+```
+
+### First Run Checklist
+
+After running `docker-compose up --build`, verify:
+
+1. **All containers are healthy:**
+   ```bash
+   docker-compose ps
+   ```
+   All services should show "healthy" status.
+
+2. **Frontend is accessible:**
+   - Open http://localhost:3000 in your browser
+   - You should see the SpaceFlow homepage
+
+3. **Backend services respond:**
+   ```bash
+   # Test auth service
+   curl http://localhost:8080/api/v1/health
+   
+   # Test analytics service
+   curl http://localhost:8083/api/v1/health
+   
+   # Test AI engine
+   curl http://localhost:8084/api/v1/health
+   ```
+
+4. **Database is initialized:**
+   - Auth service will automatically create schema on first startup
+   - Check logs: `docker-compose logs auth-service | grep -i "started"`
+
+### Troubleshooting
+
+#### Port Already in Use
+
+**Error:** `Bind for 0.0.0.0:XXXX failed: port is already allocated`
+
+**Solution:**
+- Find what's using the port:
+  ```bash
+  # Windows
+  netstat -ano | findstr :8080
+  # Linux/Mac
+  lsof -i :8080
+  ```
+- Stop the conflicting service or change the port in `docker-compose.yml`
+
+#### Services Not Starting / Health Checks Failing
+
+**Symptoms:** Containers restart repeatedly or show "unhealthy" status
+
+**Solutions:**
+1. **Check service logs:**
+   ```bash
+   docker-compose logs <service-name>
+   ```
+
+2. **Verify database is ready:**
+   ```bash
+   docker-compose logs auth-db
+   # Should see "database system is ready to accept connections"
+   ```
+
+3. **Increase health check timeout:**
+   - Some systems need more time for first startup
+   - Edit `start_period` in `docker-compose.yml` healthcheck sections
+
+4. **Rebuild from scratch:**
+   ```bash
+   docker-compose down -v
+   docker system prune -f
+   docker-compose up --build
+   ```
+
+#### Frontend Can't Connect to Backend
+
+**Symptoms:** Frontend loads but API calls fail (CORS errors, connection refused)
+
+**Solutions:**
+1. **Verify backend services are running:**
+   ```bash
+   docker-compose ps
+   ```
+
+2. **Check frontend build args:**
+   - Ensure `VITE_AUTH_API_BASE_URL`, `VITE_ANALYTICS_API_BASE_URL`, and `VITE_AI_ENGINE_API_BASE_URL` are set in `docker-compose.yml`
+   - Rebuild frontend: `docker-compose up --build frontend`
+
+3. **Test backend endpoints directly:**
+   ```bash
+   curl http://localhost:8080/api/v1/health
+   curl http://localhost:8083/api/v1/health
+   curl http://localhost:8084/api/v1/health
+   ```
+
+#### Login Authentication Errors
+
+**Error:** "Unable to sign in. Please check your credentials and try again."
+
+**Default Credentials:**
+- Email: `admin@spaceflow.local`
+- Password: `admin123`
+
+**Solutions:**
+1. **Check if default user was created:**
+   ```bash
+   docker-compose logs auth-service | grep -i "admin\|default\|user created"
+   ```
+   You should see: "✓ Default admin user created successfully!"
+
+2. **Verify user exists in database:**
+   ```bash
+   docker-compose exec auth-db psql -U spaceflow -d spaceflow_auth -c "SELECT email, role, status FROM users;"
+   ```
+
+3. **Reset database and recreate user:**
+   ```bash
+   docker-compose down -v
+   docker-compose up --build
+   ```
+   This will delete all data and recreate the default user on startup.
+
+4. **Check auth-service logs for errors:**
+   ```bash
+   docker-compose logs auth-service
+   ```
+   Look for any exceptions or errors during user creation.
+
+5. **Manually verify the user:**
+   ```bash
+   # Check user count
+   docker-compose exec auth-db psql -U spaceflow -d spaceflow_auth -c "SELECT COUNT(*) FROM users;"
+   
+   # Check specific user
+   docker-compose exec auth-db psql -U spaceflow -d spaceflow_auth -c "SELECT email, role, status FROM users WHERE email = 'admin@spaceflow.local';"
+   ```
+
+#### Database Connection Errors
+
+**Error:** `Connection to auth-db:5432 refused` or `FATAL: database "spaceflow_auth" does not exist`
+
+**Solutions:**
+1. **Wait for database to be ready:**
+   - Auth service waits for database health check
+   - Check: `docker-compose logs auth-db | grep "ready"`
+
+2. **Reset database:**
+   ```bash
+   docker-compose down -v
+   docker-compose up --build
+   ```
+
+3. **Manual database check:**
+   ```bash
+   docker-compose exec auth-db psql -U spaceflow -d spaceflow_auth -c "SELECT 1;"
+   ```
+
+#### Docker Build Failures
+
+**Error:** `failed to solve: process "/bin/sh -c ..." did not complete successfully`
+
+**Solutions:**
+1. **Clear Docker cache:**
+   ```bash
+   docker system prune -a
+   docker-compose build --no-cache
+   ```
+
+2. **Check disk space:**
+   ```bash
+   docker system df
+   ```
+
+3. **Verify Dockerfile paths:**
+   - Ensure all `context` and `dockerfile` paths in `docker-compose.yml` are correct
+   - Check that Dockerfiles exist in each service directory
+
+#### Out of Memory Errors
+
+**Symptoms:** Containers killed, "OOMKilled" in `docker-compose ps`
+
+**Solutions:**
+1. **Increase Docker memory limit:**
+   - Docker Desktop → Settings → Resources → Memory
+   - Set to at least 8GB
+
+2. **Reduce concurrent services:**
+   - Start services individually to identify memory-heavy services
+   - Consider running some services locally instead
+
+### Alternative: Local Development (Frontend Only)
 
 **Prerequisites:**
 - Node.js 20+
@@ -127,6 +333,7 @@ docker-compose down
 # Frontend environment variables for local development
 VITE_AUTH_API_BASE_URL=http://localhost:8080
 VITE_ANALYTICS_API_BASE_URL=http://localhost:8083
+VITE_AI_ENGINE_API_BASE_URL=http://localhost:8084
 ```
 
 2. Install dependencies:
@@ -189,9 +396,16 @@ java -jar target/<service-name>-*.jar
 
 - **auth-service** → `auth-db` (PostgreSQL)
 - **ai-engine** → `analytics-service` (HTTP API)
-- **frontend** → `auth-service`, `analytics-service` (HTTP APIs)
+- **frontend** → `auth-service`, `analytics-service`, `ai-engine` (HTTP APIs)
 
 All other services are independent and can run standalone.
+
+**Startup Order:**
+1. `auth-db` starts and becomes healthy
+2. `auth-service` waits for `auth-db`, then starts
+3. `analytics-service`, `booking-service`, `occupancy-service` start independently
+4. `ai-engine` waits for `analytics-service`, then starts
+5. `frontend` waits for `auth-service`, `analytics-service`, and `ai-engine`, then starts
 
 ## Intentional Out-of-Scope Areas
 

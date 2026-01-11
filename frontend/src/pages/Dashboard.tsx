@@ -231,6 +231,7 @@ const BookingUsageTooltip = ({ active, payload, label, coordinate }: any) => {
 export const Dashboard = () => {
   const [data, setData] = useState<UtilizationPoint[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [utilizationError, setUtilizationError] = useState<string | null>(null);
   const [bookingBuckets, setBookingBuckets] = useState<BookingUsageBucket[]>(
     []
   );
@@ -242,6 +243,7 @@ export const Dashboard = () => {
     // TODO: Replace dev-time date range and stubbed analytics wiring with real filters and live analytics data.
     const fetchUtilization = async () => {
       setLoading(true);
+      setUtilizationError(null);
       try {
         const response = await analyticsApi.getUtilization({
           scopeType: "WORKSPACE",
@@ -276,6 +278,11 @@ export const Dashboard = () => {
           }));
 
         setData(normalized);
+      } catch (error) {
+        if (isMounted) {
+          console.error("Failed to load utilization data", error);
+          setUtilizationError("Failed to load utilization data.");
+        }
       } finally {
         if (isMounted) {
           setLoading(false);
@@ -486,6 +493,20 @@ export const Dashboard = () => {
             <Box sx={{ flex: 1, mt: 2 }}>
               {loading ? (
                 <Skeleton variant="rounded" height={240} />
+              ) : utilizationError ? (
+                <Box
+                  sx={{
+                    height: 240,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    textAlign: "center"
+                  }}
+                >
+                  <Typography color="error">
+                    {utilizationError}
+                  </Typography>
+                </Box>
               ) : data.length === 0 ? (
                 <Box
                   sx={{

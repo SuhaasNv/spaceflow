@@ -10,6 +10,7 @@ import { Snapshots } from "../pages/Snapshots";
 import { Login } from "../pages/Login";
 import { RequireAuth } from "../auth/RequireAuth";
 import { useAuth } from "../auth/useAuth";
+import { isDemoMode } from "../config/demoMode";
 
 // Redirect logged-in users away from login page
 const LoginRoute = () => {
@@ -23,10 +24,24 @@ const LoginRoute = () => {
   return <Login />;
 };
 
+// Root route handler - redirects to dashboard in demo mode
+const RootRoute = () => {
+  const demoMode = isDemoMode();
+  
+  if (demoMode) {
+    // Demo mode: Redirect directly to dashboard for frictionless access
+    // TODO: In production, remove demo mode or set VITE_DEMO_AUTH=false
+    return <Navigate to="/app/dashboard" replace />;
+  }
+  
+  // Production mode: Show homepage
+  return <HomePage />;
+};
+
 export const AppRoutes = () => {
   return (
     <Routes>
-      <Route path="/" element={<HomePage />} />
+      <Route path="/" element={<RootRoute />} />
       <Route path="/login" element={<LoginRoute />} />
       <Route
         path="/app/dashboard"

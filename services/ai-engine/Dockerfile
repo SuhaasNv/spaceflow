@@ -12,6 +12,9 @@ FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
 
+# Install wget for health checks
+RUN apk add --no-cache wget
+
 # Create non-root user for security
 RUN addgroup -S app && adduser -S app -G app
 

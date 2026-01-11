@@ -9,7 +9,8 @@ import {
   Menu,
   MenuItem,
   Divider,
-  Chip
+  Chip,
+  Tooltip
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
@@ -17,6 +18,7 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useAuthorization } from "../../auth/useAuthorization";
+import { isDemoMode } from "../../config/demoMode";
 
 type TopBarProps = {
   onMenuClick: () => void;
@@ -29,6 +31,7 @@ export const TopBar = ({ onMenuClick, isSidebarOpen }: TopBarProps) => {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
+  const demoMode = isDemoMode();
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -189,6 +192,38 @@ export const TopBar = ({ onMenuClick, isSidebarOpen }: TopBarProps) => {
         </Box>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          {/* Demo Mode Badge */}
+          {demoMode && (
+            <Tooltip
+              title="Authentication is bypassed for demo purposes"
+              arrow
+              placement="bottom"
+            >
+              <Chip
+                label="Demo Mode"
+                size="small"
+                sx={{
+                  height: 24,
+                  fontSize: "0.7rem",
+                  fontWeight: 600,
+                  letterSpacing: "0.05em",
+                  bgcolor: "rgba(20, 184, 166, 0.15)",
+                  color: "rgba(20, 184, 166, 0.95)",
+                  border: "1px solid",
+                  borderColor: "rgba(20, 184, 166, 0.3)",
+                  "& .MuiChip-label": {
+                    px: 1.25
+                  },
+                  "&:hover": {
+                    bgcolor: "rgba(20, 184, 166, 0.2)",
+                    borderColor: "rgba(20, 184, 166, 0.4)"
+                  }
+                }}
+                variant="outlined"
+              />
+            </Tooltip>
+          )}
+          
           <Box
             onClick={handleClick}
             sx={(theme) => ({

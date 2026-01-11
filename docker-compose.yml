@@ -13,76 +13,129 @@ services:
       - "5432:5432"
     volumes:
       - auth-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U spaceflow -d spaceflow_auth"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
   auth-service:
     container_name: spaceflow-auth-service
     build:
       context: ./services/auth-service
+      dockerfile: Dockerfile
     depends_on:
-      - auth-db
+      auth-db:
+        condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://auth-db:5432/spaceflow_auth
       SPRING_DATASOURCE_USERNAME: spaceflow
       SPRING_DATASOURCE_PASSWORD: spaceflow
+      # JWT secret for local development (override in production)
+      AUTH_JWT_SECRET: dev-secret-change-me
+      AUTH_JWT_EXPIRATION_SECONDS: 3600
     ports:
       - "8080:8080"
-    # Service name 'auth-service' is used by frontend for internal communication
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/api/v1/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
 
   booking-service:
     container_name: spaceflow-booking-service
     build:
       context: ./services/booking-service
+      dockerfile: Dockerfile
     ports:
       - "8081:8080"
-    # Service name 'booking-service' can be used by other services
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   occupancy-service:
     container_name: spaceflow-occupancy-service
     build:
       context: ./services/occupancy-service
+      dockerfile: Dockerfile
     ports:
       - "8082:8080"
-    # Service name 'occupancy-service' can be used by other services
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/api/v1/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   analytics-service:
     container_name: spaceflow-analytics-service
     build:
       context: ./services/analytics-service
+      dockerfile: Dockerfile
     ports:
       - "8083:8080"
-    # Service name 'analytics-service' is used by ai-engine and frontend for internal communication
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/api/v1/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   ai-engine:
     container_name: spaceflow-ai-engine
     build:
       context: ./services/ai-engine
+      dockerfile: Dockerfile
     depends_on:
-      - analytics-service
+      analytics-service:
+        condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: dev
       # ai-engine connects to analytics-service using service name, not localhost
       SERVICES_ANALYTICS_BASE_URL: http://analytics-service:8080
     ports:
       - "8084:8080"
-    # Service name 'ai-engine' can be used by frontend for internal communication
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/api/v1/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   frontend:
     container_name: spaceflow-frontend
     build:
       context: ./frontend
+      dockerfile: Dockerfile
       args:
         # Build-time args for Vite (embedded in client bundle)
         # These must use localhost because browser requests come from the user's machine
         VITE_AUTH_API_BASE_URL: http://localhost:8080
         VITE_ANALYTICS_API_BASE_URL: http://localhost:8083
+        VITE_AI_ENGINE_API_BASE_URL: http://localhost:8084
+        # Demo mode: Bypass authentication for interview/demo purposes
+        # Set to 'false' to enable full backend authentication
+        VITE_DEMO_AUTH: "true"
     depends_on:
-      - auth-service
-      - analytics-service
+      auth-service:
+        condition: service_healthy
+      analytics-service:
+        condition: service_healthy
+      ai-engine:
+        condition: service_healthy
     ports:
       - "3000:80"
-    # Note: Frontend makes client-side requests from the browser, so URLs must be
-    # accessible from the host machine (localhost), not Docker service names.
-    # Service-to-service communication (e.g., ai-engine -> analytics-service) uses service names.
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:80 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
 volumes:
   auth-db-data:
